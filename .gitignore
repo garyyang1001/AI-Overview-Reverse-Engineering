@@ -13,6 +13,7 @@
 *.env
 .env.*
 !.env.example
+!**/.env.example
 
 # API 密鑰與配置文件
 config/secrets.json

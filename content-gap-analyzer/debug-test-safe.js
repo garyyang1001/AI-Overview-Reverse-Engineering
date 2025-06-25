@@ -1,9 +1,16 @@
 const axios = require('axios');
+require('dotenv').config({ path: './backend/.env' });
 
 async function testSerpAPI() {
   console.log('🔍 測試 SerpAPI...');
   
-  const SERPAPI_KEY = '85e545c9b1f4871237dc011e6fcd465d76c88bc4120c5e241afc253722d508af';
+  const SERPAPI_KEY = process.env.SERPAPI_KEY;
+  
+  if (!SERPAPI_KEY) {
+    console.log('❌ 未找到 SERPAPI_KEY 環境變數');
+    console.log('請確保 backend/.env 文件包含有效的 SERPAPI_KEY');
+    return;
+  }
   
   try {
     const response = await axios.get('https://serpapi.com/search.json', {
@@ -39,34 +46,42 @@ async function testSerpAPI() {
   }
 }
 
-async function testGemini() {
-  console.log('\n🤖 測試 Gemini API...');
+async function testOpenAI() {
+  console.log('\n🤖 測試 OpenAI API...');
   
-  const GEMINI_API_KEY = 'AIzaSyABZjYnXjO9ofLLO_GRoI2r7oq2SxWFOwk';
+  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+  
+  if (!OPENAI_API_KEY) {
+    console.log('❌ 未找到 OPENAI_API_KEY 環境變數');
+    console.log('請確保 backend/.env 文件包含有效的 OPENAI_API_KEY');
+    return;
+  }
   
   try {
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      'https://api.openai.com/v1/chat/completions',
       {
-        contents: [{
-          parts: [{
-            text: '請簡單回答：你好嗎？'
-          }]
-        }]
+        model: 'gpt-4o-mini',
+        messages: [{
+          role: 'user',
+          content: '請簡單回答：你好嗎？'
+        }],
+        max_tokens: 50
       },
       {
         headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
           'Content-Type': 'application/json'
         },
         timeout: 30000
       }
     );
     
-    console.log('✅ Gemini API 響應成功');
+    console.log('✅ OpenAI API 響應成功');
     console.log('響應長度:', JSON.stringify(response.data).length);
     
   } catch (error) {
-    console.log('❌ Gemini API 調用失敗:', error.message);
+    console.log('❌ OpenAI API 調用失敗:', error.message);
     if (error.response) {
       console.log('響應狀態:', error.response.status);
       console.log('響應數據:', JSON.stringify(error.response.data, null, 2));
@@ -95,12 +110,14 @@ async function testContentScraping() {
 
 async function runTests() {
   console.log('🧪 開始調試測試...\n');
+  console.log('📋 確保 backend/.env 文件包含必要的 API 密鑰\n');
   
   await testSerpAPI();
-  await testGemini();
+  await testOpenAI();
   await testContentScraping();
   
   console.log('\n✅ 測試完成');
+  console.log('\n🔒 安全提醒：此腳本使用環境變數，不包含硬編碼的 API 密鑰');
 }
 
 runTests().catch(console.error);
