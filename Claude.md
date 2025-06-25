@@ -1,14 +1,17 @@
-好的，我完全理解您的需求。您需要一份單一、完整、結構化的**「開發規格書 (Development Specification)」**，這份文件將作為 AI 開發的核心藍圖。它將無縫整合我們討論過的所有概念：生產級架構、非同步工作流、以及至關重要的「大內容處理與分層摘要」策略。
+# 🚀 AIO-Auditor v5.1 - 完整開發規格書
 
-這份文件將以極其清晰和結構化的方式呈現，以便 AI 或開發團隊能夠直接依此進行開發，無需參考先前的對話。
+**專案代號：** AIO-Auditor  
+**版本：** 5.1 (生產級，商業級錯誤處理)  
+**更新日期：** 2024-12-XX  
+**文件目標：** 本文件是專案開發的唯一事實來源 (Single Source of Truth)，整合了強化實施計劃的所有技術細節，包括 BullMQ 非同步架構、Playwright 錯誤處理機制、gpt-4o-mini 統一策略。
 
----
+## 📋 關鍵設計原則 (Design Principles)
 
-### **AI 開發規格書：SEO 內容優化平台**
-
-**專案代號：** AIO-Auditor
-**版本：** 4.0 (生產級，含分層摘要)
-**文件目標：** 本文件是專案開發的唯一事實來源 (Single Source of Truth)。它詳細定義了專案的目標、架構、工作流程、AI 核心策略和開發路線圖，旨在指導整個開發過程。
+**基於 Update.md + Playwright.md 的整合分析：**
+- **智能成本分配：** gpt-4o-mini 統一策略 + Playwright 自建爬蟲
+- **商業級健壯性：** 完整的分層錯誤處理機制  
+- **非同步架構：** BullMQ + Redis 任務佇列
+- **優雅降級：** 部分失敗不影響整體服務
 
 ---
 
@@ -32,9 +35,13 @@
 
 #### **2.1. 技術棧 (Tech Stack)**
 *   **後端:** Node.js, Express.js
-*   **任務佇列:** BullMQ + Redis
-*   **前端:** React
-*   **外部 API:** SerpApi, Firecrawl, OpenAI (或 Google Gemini)
+*   **任務佇列:** BullMQ + Redis (非同步處理核心)
+*   **網頁爬取:** Playwright (自建，成本效益策略)
+*   **AI 模型:** gpt-4o-mini (統一模型策略)
+*   **前端:** React, TypeScript
+*   **外部 API:** SerpApi, OpenAI
+*   **容器化:** Docker + docker-compose
+*   **監控:** Sentry (錯誤追蹤)
 
 #### **2.2. 工作流 (Job Flow)**
 系統採用非同步任務佇列架構，確保使用者體驗流暢。
@@ -46,21 +53,25 @@
         *   **動作：** 使用 `目標關鍵字` 進行搜尋，提取並儲存 `AI Overview` 的完整摘要文本及其引用的 `所有外部連結 (AIO References)`。
 
     *   **步骤二：批量內容爬取 (Batch Content Scraping)**
-        *   **工具：** Firecrawl API
-        *   **動作：** 調用 Firecrawl 的**批量爬取 (Batch Scrape)** 功能，一次性爬取 `我的網頁URL` 和 `AIO References` 列表中的所有網址，獲取其乾淨的 Markdown 內容。
+        *   **工具：** Playwright (自建爬蟲服務)
+        *   **動作：** 使用強化版 Playwright 服務並行爬取 `我的網頁URL` 和 `AIO References` 列表中的所有網址
+        *   **錯誤處理策略：**
+            - **致命錯誤：** 用戶頁面爬取失敗 → 整個任務失敗
+            - **非致命錯誤：** 部分競爭者頁面失敗 → 繼續分析並警告
+            - **錯誤分類：** TimeoutError, NavigationError, SelectorNotFound, AntiScraping, UnexpectedContent
 
     *   **步骤三：內容精煉 (Content Refinement)**
         *   **目標：** 將長篇 Markdown 智能地壓縮成包含核心論點的精簡摘要。
         *   **動作：** 對於**步驟二**中爬取的**每一個**頁面，並行執行以下任務：
             1.  **分塊 (Chunking):** 將單個頁面的長 Markdown 按邏輯邊界（如 H2 標題）或遞歸字符策略分割成多個文本塊 (Chunks)。
-            2.  **並行摘要 (Parallel Summarization):** 使用**低成本、高速模型 (如 `gpt-3.5-turbo`)** 和**「精煉 Prompt」**（見 3.1 節），對每個文本塊提取核心論點、數據和實體。
+            2.  **並行摘要 (Parallel Summarization):** 使用**gpt-4o-mini** 和**「精煉 Prompt v2.0」**（見 3.1 節），對每個文本塊提取核心論點、數據和實體。
             3.  **彙整 (Aggregation):** 將所有文本塊的摘要結果合併，為每個原始頁面生成一份濃縮的**「關鍵點摘要 (Essentials Summary)」**。
 
     *   **步骤四：最終差距分析 (Final Gap Analysis)**
         *   **目標：** 比較使用者和競爭者的核心內容，生成優化策略。
         *   **動作：**
             1.  **組裝數據：** 將**步驟三**中產生的**「關鍵點摘要」**組裝成主分析 Prompt 所需的 JSON 輸入格式。
-            2.  **執行分析：** 使用**高性能模型 (如 `gpt-4-turbo`)** 和**「主分析 Prompt」**（見 3.2 節），生成最終的結構化 JSON 分析報告。
+            2.  **執行分析：** 使用**gpt-4o-mini** 和**「主分析 Prompt v2.0」**（見 3.2 節），生成最終的結構化 JSON 分析報告。
 
 3.  **結果儲存與查詢 (Result Handling):** Worker 將生成的 JSON 報告與 `jobId` 關聯並儲存。前端透過 `GET /api/results/{jobId}` 輪詢狀態，並在完成時獲取報告。
 
@@ -68,75 +79,59 @@
 
 ### **3. AI 核心 Prompt 策略 (Core AI Prompt Strategy)**
 
-#### **3.1. Prompt 1: 內容精煉 Prompt (Content Refinement Prompt)**
-*   **用途：** 用於工作流的「步驟三」，由低成本、高速模型執行。
+#### **3.1. Refinement Prompt v2.0 (內容精煉 Prompt)**
+*   **用途：** 用於工作流的「步驟三」，由 gpt-4o-mini 執行。
 *   **目標：** 從單個文本塊中快速、準確地提取事實性、關鍵性信息。
 
 ```prompt
-你是一個SEO內容分析助理。你的任務是閱讀以下提供的文本塊，並僅提取出其中所有包含以下元素的關鍵資訊：
-- 核心論點、主張和結論。
-- 具體的數據、統計數字、年份、或金額。
-- 提到的特定產品名稱、技術術語、法律法規、人物、或組織機構名稱 (實體)。
-- 清晰、可執行的建議、技巧或操作步驟。
+You are an information extraction engine. Your task is to read the following text block and extract ONLY the core factual information.
 
-你的輸出必須遵循以下規則：
-1. 以無序列表的格式返回結果（使用'-'符號）。
-2. 忽略所有引言、問候、過渡性語句和主觀性強的形容詞。
-3. 保持中立和客觀，只提煉事實和關鍵點。
+Extract the following elements:
+- Key arguments, claims, and conclusions.
+- Specific data points, statistics, numbers, dates, or costs.
+- Named entities: products, technologies, laws, people, or organizations.
+- Actionable advice, steps, or "how-to" instructions.
+
+Follow these rules STRICTLY:
+1. Output ONLY as a Markdown unordered list (using "-").
+2. DO NOT include introductions, summaries, or conversational text.
+3. Be objective. Exclude subjective language and marketing fluff.
+4. Preserve the original language of the text.
 
 [此處插入文本塊]
 ```
 
-#### **3.2. Prompt 2: 主分析 Prompt (Main Analysis Prompt)**
-*   **用途：** 用於工作流的「步驟四」，由高性能模型執行。
+#### **3.2. Main Analysis Prompt v2.0 (主分析 Prompt)**
+*   **用途：** 用於工作流的「步驟四」，由 gpt-4o-mini 執行。
 *   **目標：** 基於精煉後的關鍵點摘要，進行深度、多維度的差距分析，並生成結構化的行動計畫。
 
 ```prompt
 # [SYSTEM] Persona & Role
-You are "AIO-Gap-Analyzer-GPT", an elite SEO analyst and data scientist. Your expertise lies in meticulously comparing web content against Google's AI Overviews (AIO) to identify actionable optimization opportunities. You think in terms of topics, entities, user intent, and E-E-A-T signals. Your output must be structured, data-driven, and directly usable by a web developer or content creator.
+You are "AIO-Auditor-GPT", an elite SEO Content Strategist. Your analysis is rooted in Google's E-E-A-T principles (Experience, Expertise, Authoritativeness, Trustworthiness). Your goal is to reverse-engineer Google's AI Overview logic based on pre-processed, summarized content and deliver a structured, actionable report.
 
-# [USER] Context & Task
-You will receive a JSON object containing all the necessary data for your analysis. The data provided has been pre-processed into concise summaries of key points. Your analysis MUST be based on these provided summaries. The data includes:
-1.  `analysisContext`: The target keyword and the exact text of the Google AI Overview.
-2.  `userPage`: The URL and a concise `essentialsSummary` of the user's page.
-3.  `competitorPages`: An array of pages referenced in the AI Overview, each with its URL and concise `essentialsSummary`.
+# [CONTEXT]
+You are analyzing why a user's webpage was NOT included in Google's AI Overview. Your entire analysis must be based *solely* on the provided concise `essentialsSummary` for each page, comparing them against the official `aiOverview.text`. Do not infer information beyond what is provided in the summaries.
 
-Your task is to perform a comprehensive gap analysis and generate a strategic report.
+# [TASK]
+Execute a structured analysis and generate a JSON output that strictly adheres to the specified schema. Your process is:
+1. **Executive Summary:** Diagnose the single most critical weakness and prescribe the top-priority action.
+2. **Gap Analysis:** Quantify and qualify the gaps in Topic Coverage, Named Entities, and inferred E-E-A-T signals.
+3. **Actionable Plan:** Create a prioritized, concrete list of actions for the user to implement.
 
-# [SYSTEM] Output Format
-Your entire response MUST be a single, valid JSON object, without any surrounding text or markdown. Adhere strictly to the following schema. Use the provided descriptions to guide the content of each field.
+# [OUTPUT SCHEMA]
 {
   "executiveSummary": {
-    "mainReasonForExclusion": "A concise, one-sentence explanation of the primary reason the user's page was not featured in the AI Overview, based on the provided summaries.",
-    "topPriorityAction": "The single most impactful change the user should make."
+    "mainReasonForExclusion": "...",
+    "topPriorityAction": "..."
   },
-  "contentGapAnalysis": {
-    "missingTopics": [
-      {
-        "topic": "The specific missing topic or question.",
-        "description": "Why this topic is important and how competitors' summaries cover it.",
-        "sourceCompetitors": ["url-of-competitor-1.com"]
-      }
-    ],
-    "entityGap": [
-      {
-        "entity": "A key person, product, or organization missing from the user's summary.",
-        "description": "Why mentioning this entity adds authority or context.",
-        "sourceCompetitors": ["url-of-competitor-1.com"]
-      }
-    ]
+  "gapAnalysis": {
+    "topicCoverage": { "score": "0-100", "missingTopics": [], "analysis": "..." },
+    "entityGaps": { "missingEntities": [], "analysis": "..." },
+    "E_E_A_T_signals": { "score": "0-100", "recommendations": [] }
   },
-  "actionableImprovementPlan": {
-    "highPriority": [
-      { "actionType": "ADD_NEW_SECTION", "suggestion": "...", "details": "...", "rationale": "..." }
-    ],
-    "mediumPriority": [
-      { "actionType": "ENRICH_EXISTING_CONTENT", "suggestion": "...", "details": "...", "rationale": "..." }
-    ],
-    "lowPriority": [
-      { "actionType": "IMPROVE_E_E_A_T", "suggestion": "...", "details": "...", "rationale": "..." }
-    ]
-  }
+  "actionablePlan": [
+    { "type": "ADD_SECTION", "title": "...", "description": "...", "priority": "High" }
+  ]
 }
 ```
 
@@ -168,52 +163,212 @@ Your entire response MUST be a single, valid JSON object, without any surroundin
 
 ---
 
-### **4. 開發路線圖 (Detailed Development Roadmap)**
+## **4. 🚀 AIO-Auditor v5.1 強化實施計劃**
 
-#### **第一階段：後端核心服務與 AI 策略驗證 (2-3 週)**
-*   **目標：** 搭建後端基礎架構，開發並獨立測試所有核心服務模組，驗證並鎖定兩個 Prompt 的分析品質。
-*   **任務：**
-    1.  **環境搭建：** 初始化 Node.js 專案，設定 Express, BullMQ, Redis。
-    2.  **外部 API 服務開發：** 創建 `serpapi.service.js` 和 `firecrawl.service.js`，包含錯誤處理和重試機制。
-    3.  **內容精煉服務開發：** 創建 `contentRefiner.service.js`，實現文本分塊、並行摘要和結果彙整邏輯。
-    4.  **Prompt 工程與驗證 (本階段核心)：**
-        *   **創建「黃金測試集」：** 手動準備 5-10 組高品質測試案例，每個案例包含目標關鍵字、AIO 文本，以及**精煉後的**使用者與競爭者摘要。
-        *   **迭代「精煉 Prompt」：** 使用原始長文本，驗證 `contentRefiner.service` 產生的摘要是否準確、無損。
-        *   **迭代「主分析 Prompt」：** 使用黃金測試集中的精煉摘要，驗證 `aiAnalyzer.service` 產生的報告是否深度、準確、可操作。
-*   **交付物：** 所有後端服務模組，一份經過驗證的「黃金測試集」，以及兩個鎖定版本的 Prompt。
+### **🏗️ 第一階段：核心架構重構 (2-3週)**
 
-#### **第二階段：後端整合與 API 實現 (1-2 週)**
-*   **目標：** 將所有獨立模組串聯成一個由任務佇列驅動的完整工作流，並透過 API 暴露給外部。
-*   **任務：**
-    1.  **開發 Worker 程序：** 創建 `analysis.worker.js`，按 `步骤一 -> ... -> 步骤四` 的順序調用所有服務，並實現進度更新和錯誤處理。
-    2.  **開發 API 端點：** 實現 `POST /api/analyze` 和 `GET /api/results/{jobId}`。
-    3.  **整合與端到端測試：** 使用 API 測試工具（如 Postman）對整個後端流程進行完整測試。
-*   **交付物：** 一個可完整執行分析流程的 Worker 腳本，兩個功能完整的 API 端點，一份測試報告。
+#### **4.1.1 BullMQ + Redis 基礎設施**
+**目標：** 建立穩定的非同步任務處理架構
 
-#### **第三階段：前端開發與使用者體驗 (2-3 週)**
-*   **目標：** 開發一個直觀、響應迅速的前端介面，並以富有洞察力的方式展示分析報告。
-*   **任務：**
-    1.  **UI/UX 設計：** 設計輸入頁、處理中頁面（含進度條）和報告頁面（視覺化呈現 JSON 數據）。
-    2.  **前端開發：** 使用 React 建立可重用的 UI 組件。
-    3.  **API 對接：** 實現表單提交、任務輪詢邏輯，並將獲取的報告數據動態渲染。
-*   **交付物：** 一套 UI 設計稿，一個功能完整的單頁應用 (SPA)。
+**具體任務：**
+- 安裝 `bullmq`, `ioredis` 依賴
+- 配置 Redis 連接和任務佇列
+- 建立任務狀態追蹤機制（pending → processing → completed/failed）
+- 實現 Worker 程序與 API 服務分離
 
-#### **第四階段：部署、優化與上線準備 (1-2 週)**
-*   **目標：** 將應用部署到雲端，進行性能優化，並建立監控和反饋機制。
-*   **任務：**
-    1.  **部署：** 將後端 API、Worker、Redis 和前端應用分別部署到合適的雲端平台。
-    2.  **成本與性能優化：**
-        *   **實現快取機制：** 在 API 層對近期已完成的相同請求直接返回結果，避免重複計算。
-    3.  **建立監控與反饋系統：**
-        *   整合錯誤監控服務（如 Sentry）。
-        *   建立結構化的日誌系統。
-        *   在前端報告中加入「建議是否有用」的反饋按鈕，收集數據用於未來微調 Prompt。
-*   **交付物：** 一個公開可訪問的線上應用，實作了快取邏輯，並整合了監控與反饋功能。
+**交付物：**
+```typescript
+// queueService.ts - 任務佇列核心服務
+// redisClient.ts - Redis 連接配置
+// jobManager.ts - 任務狀態管理
+```
+
+#### **4.1.2 強化版 Playwright 服務**
+**目標：** 實現商業級錯誤處理機制
+
+**錯誤分類策略：**
+```typescript
+interface ScrapeResult {
+  url: string;
+  content: string | null;
+  success: boolean;
+  error?: 'TimeoutError' | 'NavigationError' | 'SelectorNotFound' | 'AntiScraping' | 'UnexpectedContent';
+  errorDetails?: string;
+}
+```
+
+**具體錯誤處理機制：**
+- **網路連線錯誤：** 超時、DNS 失敗、HTTP 錯誤碼
+- **反爬蟲機制：** CAPTCHA、IP 封鎖、Cloudflare 保護
+- **內容結構錯誤：** 選擇器失效、動態加載超時
+- **非預期內容：** 檔案下載、重導向失敗
+
+#### **4.1.3 分層錯誤傳播系統**
+**目標：** 建立從後端到前端的完整錯誤處理鏈
+
+**錯誤傳播路徑：**
+```
+[Playwright 錯誤] → [Worker 分類處理] → [BullMQ 狀態標記] → [API 友好轉譯] → [前端優雅呈現]
+```
+
+**錯誤分級策略：**
+- **致命錯誤：** 用戶頁面爬取失敗 → 整個任務失敗
+- **非致命錯誤：** 部分競爭者頁面失敗 → 繼續分析並警告
 
 ---
 
-### **5. 風險評估 (Risk Assessment)**
-*   **API 依賴風險：** 外部 API 格式變更或服務中斷。**應對：** 選擇專業服務商，並在代碼中做好錯誤處理。
-*   **分析品質風險：** AI 生成不準確的建議。**應對：** 持續進行 Prompt 工程，依賴「黃金測試集」進行回歸測試，並在 UI 中提示使用者結合專家判斷。
-*   **成本風險：** API 呼叫費用超出預期。**應對：** **分層摘要架構**是主要控制手段。結合後端快取和合理的使用者收費方案，嚴格控制成本。
-*   **爬蟲穩定性風險：** 網站反爬蟲機制。**應對：** 依賴 Firecrawl 這類專業服務。對爬取失敗的單個頁面進行優雅降級，不中斷整個分析任務。
+### **🧠 第二階段：AI 統一與 Prompt 工程 (1-2週)**
+
+#### **4.2.1 模型統一為 gpt-4o-mini**
+**目標：** 簡化配置並統一成本控制
+
+**具體任務：**
+- 內容精煉階段：`gpt-4o-mini`
+- 最終分析階段：`gpt-4o-mini`
+- 統一 token 計算和成本控制邏輯
+- 更新所有 AI 服務調用接口
+
+#### **4.2.2 標準化 Prompt 實施**
+**目標：** 實現 v2.0 版本的精確 Prompt 規格
+
+**Refinement Prompt v2.0：**
+- 英文統一格式，提高一致性
+- 嚴格的輸出格式要求
+- 客觀事實提取策略
+
+**Main Analysis Prompt v2.0：**
+- 基於 E-E-A-T 原則的分析框架
+- 結構化 JSON 輸出格式
+- 可操作的改進建議生成
+
+#### **4.2.3 黃金測試集建立**
+**目標：** 建立 AI 品質保證機制
+
+**具體任務：**
+- 創建 5-10 組高品質測試案例
+- 建立自動化測試腳本
+- Prompt 版本管理和回歸測試
+
+---
+
+### **🔄 第三階段：Worker 程序與 API 重構 (1-2週)**
+
+#### **4.3.1 獨立 Worker 程序**
+**目標：** 實現完整的 5 階段非同步工作流
+
+```typescript
+// analysisWorker.ts - 完整 5 階段工作流
+// 1. SerpAPI 數據獲取 (含優雅降級)
+// 2. Playwright 批量爬取 (含錯誤分類)  
+// 3. 內容精煉 (並行處理)
+// 4. AI 最終分析 (JSON 格式化)
+// 5. 結果存儲與狀態更新
+```
+
+#### **4.3.2 API 端點標準化**
+**目標：** 實現標準化的 RESTful API 接口
+
+```typescript
+POST /api/analyze -> { jobId: string }
+GET /api/results/{jobId} -> {
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'completed_with_errors',
+  progress?: number,
+  data?: AnalysisResult,
+  error?: ErrorResponse,
+  warnings?: Warning[]
+}
+```
+
+#### **4.3.3 錯誤回應結構化**
+```json
+{
+  "status": "failed",
+  "error_code": "USER_PAGE_SCRAPE_FAILED", 
+  "message": "無法分析您提供的網頁",
+  "details": "系統在嘗試抓取您的頁面時超時..."
+}
+```
+
+---
+
+### **📦 第四階段：Docker 容器化 (1週)**
+
+#### **4.4.1 多容器架構**
+- `api-server`: Express.js API 服務
+- `worker`: 分析處理 Worker
+- `redis`: 任務佇列和快取
+- `docker-compose.yml`: 完整開發環境
+
+#### **4.4.2 環境配置管理**
+- 開發/測試/生產環境分離
+- 敏感資訊 (.env) 管理
+- 容器間網路配置
+
+---
+
+### **🔍 第五階段：監控與優化 (1週)**
+
+#### **4.5.1 監控系統**
+- Sentry 錯誤追蹤整合
+- 結構化日誌記錄
+- API 使用量監控
+
+#### **4.5.2 性能優化**
+- Redis 快取機制 (避免重複分析)
+- Token 使用量追蹤
+- 成本控制儀表板
+
+---
+
+## **5. 🎯 關鍵技術亮點 (Key Technical Highlights)**
+
+### **5.1 商業級錯誤處理**
+- **4 類主要錯誤：** 網路、結構、反爬蟲、內容類型
+- **分層傳播機制：** 後端分類 → API 轉譯 → 前端友好顯示
+- **優雅降級：** 部分失敗不影響整體服務
+
+### **5.2 成本效益策略**
+- **Playwright 自建：** 避免 Firecrawl 費用
+- **統一 gpt-4o-mini：** 簡化配置，控制成本
+- **智能快取：** 避免重複計算
+
+### **5.3 生產級架構**
+- **完全非同步：** BullMQ 任務佇列
+- **容器化部署：** Docker + docker-compose
+- **狀態追蹤：** 實時進度反饋
+
+---
+
+## **6. 風險評估與應對策略 (Risk Assessment)**
+
+### **6.1 技術風險**
+*   **API 依賴風險：** SerpApi 格式變更或服務中斷  
+    **應對：** 實現多重降級策略，錯誤重試機制
+    
+*   **爬蟲穩定性風險：** 反爬蟲機制與 IP 封鎖  
+    **應對：** 商業級錯誤處理，優雅降級，不中斷分析任務
+    
+*   **Redis 依賴風險：** 任務佇列服務中斷  
+    **應對：** Redis 持久化配置，定期備份，監控告警
+
+### **6.2 業務風險**
+*   **分析品質風險：** AI 生成不準確的建議  
+    **應對：** 黃金測試集回歸測試，Prompt 版本管理
+    
+*   **成本風險：** gpt-4o-mini 使用量超出預期  
+    **應對：** Token 使用監控，智能快取機制，使用量限制
+    
+*   **性能風險：** 高並發下系統穩定性  
+    **應對：** BullMQ 任務限流，Docker 水平擴展，負載均衡
+
+---
+
+## **7. 📊 預期交付成果 (Expected Deliverables)**
+
+1. **健壯的非同步分析系統** - 處理各種異常情況
+2. **標準化的 AI 工程** - 一致、可測試的 Prompt v2.0
+3. **專業級錯誤處理** - 從後端到前端的完整錯誤傳播
+4. **容器化部署方案** - 開發到生產的無縫切換
+5. **監控與成本控制** - 商業運營必備功能
+
+**最終目標：** 打造一個生產級、可擴展、成本可控的 SEO 內容分析平台，為 AIO 內容優化提供專業級解決方案。
