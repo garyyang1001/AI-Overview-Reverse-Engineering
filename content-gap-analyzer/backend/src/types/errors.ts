@@ -3,13 +3,12 @@
  * 實現分層錯誤傳播系統：[Playwright Error] → [Worker Classification] → [BullMQ Status] → [API Translation] → [Frontend Display]
  */
 
-// Playwright 層級錯誤類型
+// Playwright 層級錯誤類型（簡化版）
 export type PlaywrightErrorType = 
-  | 'TimeoutError'
-  | 'NavigationError' 
-  | 'SelectorNotFound'
-  | 'AntiScraping'
-  | 'UnexpectedContent';
+  | 'TIMEOUT'
+  | 'NETWORK' 
+  | 'BLOCKED'
+  | 'CONTENT_ERROR';
 
 // Worker 層級錯誤分類
 export type WorkerErrorType =

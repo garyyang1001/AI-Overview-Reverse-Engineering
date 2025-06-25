@@ -95,7 +95,7 @@ export interface SuccessMetrics {
   timeframe: string;
 }
 
-// v5.1 Types - Actionable Plan
+// v5.1 Types - Actionable Plan (Enhanced with detailed implementation)
 export interface ActionItem {
   action: string;
   title: string;
@@ -105,6 +105,8 @@ export interface ActionItem {
   timeline: string;
   implementation: string;
   expectedOutcome: string;
+  specificSteps?: string[];           // 具體實施步驟
+  measurableGoals?: string[];         // 可衡量的目標
 }
 
 export interface ActionablePlan {

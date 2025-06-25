@@ -10,7 +10,7 @@ interface OpenAIInput {
   userPage: PageContent;
   aiOverview: AIOverviewData;
   competitorPages: PageContent[];
-  jobId?: string; // v5.1 新增：用於成本追蹤
+  jobId: string; // v5.1 必需參數：用於成本追蹤
 }
 
 class OpenAIService {
@@ -69,8 +69,8 @@ class OpenAIService {
         max_tokens: maxTokens
       });
 
-      // v5.1 新增：成本追蹤
-      if (response.usage && input.jobId) {
+      // v5.1 新增：成本追蹤（jobId 為必需參數）
+      if (response.usage) {
         costTracker.recordMainAnalysisCost(
           input.jobId,
           response.usage.prompt_tokens,
@@ -126,24 +126,54 @@ class OpenAIService {
    * 構建分析數據用於 Prompt v2.0 (新方法)
    */
   private buildAnalysisData(input: OpenAIInput): Record<string, any> {
+    // 詳細記錄構建的分析數據
+    const analysisContext = {
+      targetKeyword: input.targetKeyword,
+      aiOverview: {
+        text: input.aiOverview.summaryText || '',
+        references: input.aiOverview.references || []
+      }
+    };
+
+    const userPageData = {
+      url: input.userPage.url,
+      essentialsSummary: input.userPage.cleanedContent || ''
+    };
+
+    const competitorPagesData = input.competitorPages.map(page => ({
+      url: page.url,
+      essentialsSummary: page.cleanedContent || ''
+    }));
+
+    // 記錄構建的數據
+    logger.info('Building analysis data for OpenAI', {
+      targetKeyword: input.targetKeyword,
+      userPageSummaryLength: userPageData.essentialsSummary.length,
+      competitorCount: competitorPagesData.length,
+      aiOverviewTextLength: analysisContext.aiOverview.text.length
+    });
+
+    // 記錄用戶頁面摘要預覽
+    if (userPageData.essentialsSummary) {
+      logger.debug('User page essentials summary preview:', {
+        preview: userPageData.essentialsSummary.substring(0, 150) + '...'
+      });
+    }
+
+    // 記錄競爭對手摘要預覽
+    competitorPagesData.forEach((competitor, index) => {
+      if (competitor.essentialsSummary) {
+        logger.debug(`Competitor ${index} essentials summary preview:`, {
+          url: competitor.url,
+          preview: competitor.essentialsSummary.substring(0, 150) + '...'
+        });
+      }
+    });
+
     return {
-      analysisContext: JSON.stringify({
-        targetKeyword: input.targetKeyword,
-        aiOverview: {
-          text: input.aiOverview.summaryText || '',
-          references: input.aiOverview.references || []
-        }
-      }),
-      userPage: JSON.stringify({
-        url: input.userPage.url,
-        essentialsSummary: input.userPage.cleanedContent || ''
-      }),
-      competitorPages: JSON.stringify(
-        input.competitorPages.map(page => ({
-          url: page.url,
-          essentialsSummary: page.cleanedContent || ''
-        }))
-      )
+      analysisContext: JSON.stringify(analysisContext),
+      userPage: JSON.stringify(userPageData),
+      competitorPages: JSON.stringify(competitorPagesData)
     };
   }
   

@@ -69,6 +69,105 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
         />
       )}
       
+      {/* Processing Steps Details */}
+      {result.processingSteps && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <h3 className="font-semibold text-lg mb-4">🔄 處理步驟詳情</h3>
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-white rounded border">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-3 h-3 rounded-full ${
+                    result.processingSteps.serpApiStatus === 'completed' ? 'bg-green-500' :
+                    result.processingSteps.serpApiStatus === 'failed' ? 'bg-red-500' : 'bg-yellow-500'
+                  }`}></div>
+                  <span className="text-sm font-medium">AI Overview 提取</span>
+                </div>
+                <span className="text-xs text-gray-500 capitalize">{result.processingSteps.serpApiStatus}</span>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-white rounded border">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-3 h-3 rounded-full ${
+                    result.processingSteps.userPageStatus === 'completed' ? 'bg-green-500' :
+                    result.processingSteps.userPageStatus === 'failed' ? 'bg-red-500' : 'bg-yellow-500'
+                  }`}></div>
+                  <span className="text-sm font-medium">用戶頁面爬取</span>
+                </div>
+                <span className="text-xs text-gray-500 capitalize">{result.processingSteps.userPageStatus}</span>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-white rounded border">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-3 h-3 rounded-full ${
+                    result.processingSteps.competitorPagesStatus === 'completed' ? 'bg-green-500' :
+                    result.processingSteps.competitorPagesStatus === 'failed' ? 'bg-red-500' : 'bg-yellow-500'
+                  }`}></div>
+                  <span className="text-sm font-medium">競爭對手爬取</span>
+                </div>
+                <span className="text-xs text-gray-500 capitalize">{result.processingSteps.competitorPagesStatus}</span>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-white rounded border">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-3 h-3 rounded-full ${
+                    result.processingSteps.contentRefinementStatus === 'completed' ? 'bg-green-500' :
+                    result.processingSteps.contentRefinementStatus === 'failed' ? 'bg-red-500' : 'bg-yellow-500'
+                  }`}></div>
+                  <span className="text-sm font-medium">內容精煉</span>
+                </div>
+                <span className="text-xs text-gray-500 capitalize">{result.processingSteps.contentRefinementStatus}</span>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-white rounded border">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-3 h-3 rounded-full ${
+                    result.processingSteps.aiAnalysisStatus === 'completed' ? 'bg-green-500' :
+                    result.processingSteps.aiAnalysisStatus === 'failed' ? 'bg-red-500' : 'bg-yellow-500'
+                  }`}></div>
+                  <span className="text-sm font-medium">AI 差距分析</span>
+                </div>
+                <span className="text-xs text-gray-500 capitalize">{result.processingSteps.aiAnalysisStatus}</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Quality Assessment */}
+          {result.qualityAssessment && (
+            <div className="mt-4 p-3 bg-white rounded border">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">整體品質評估</span>
+                <div className="flex items-center space-x-2">
+                  <span className={`text-sm font-semibold ${
+                    result.qualityAssessment.level === 'excellent' ? 'text-green-600' :
+                    result.qualityAssessment.level === 'good' ? 'text-blue-600' :
+                    result.qualityAssessment.level === 'fair' ? 'text-yellow-600' : 'text-red-600'
+                  }`}>
+                    {result.qualityAssessment.score}分
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    ({result.qualityAssessment.completedSteps}/{result.qualityAssessment.totalSteps} 步驟完成)
+                  </span>
+                </div>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full ${
+                    result.qualityAssessment.level === 'excellent' ? 'bg-green-500' :
+                    result.qualityAssessment.level === 'good' ? 'bg-blue-500' :
+                    result.qualityAssessment.level === 'fair' ? 'bg-yellow-500' : 'bg-red-500'
+                  }`}
+                  style={{ width: `${result.qualityAssessment.score}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      
       {/* Warnings for completed_with_errors */}
       {status?.status === 'completed_with_errors' && status.warnings && status.warnings.length > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -210,7 +309,37 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
                       </div>
                       <h5 className="font-semibold text-gray-800 mb-1">{action.title}</h5>
                       <p className="text-sm text-gray-600 mb-2">{action.description}</p>
-                      <p className="text-xs text-gray-500">{action.implementation}</p>
+                      <p className="text-xs text-gray-500 mb-2">{action.implementation}</p>
+                      
+                      {/* 具體實施步驟 */}
+                      {action.specificSteps && action.specificSteps.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs font-medium text-gray-700 mb-1">具體步驟：</p>
+                          <ul className="text-xs text-gray-600 space-y-1">
+                            {action.specificSteps.map((step, stepIndex) => (
+                              <li key={stepIndex} className="flex items-start">
+                                <span className="text-gray-400 mr-1">•</span>
+                                <span>{step}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {/* 可衡量目標 */}
+                      {action.measurableGoals && action.measurableGoals.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs font-medium text-gray-700 mb-1">預期成果：</p>
+                          <ul className="text-xs text-gray-600 space-y-1">
+                            {action.measurableGoals.map((goal, goalIndex) => (
+                              <li key={goalIndex} className="flex items-start">
+                                <span className="text-green-500 mr-1">✓</span>
+                                <span>{goal}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -236,7 +365,37 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
                       </div>
                       <h5 className="font-semibold text-gray-800 mb-1">{action.title}</h5>
                       <p className="text-sm text-gray-600 mb-2">{action.description}</p>
-                      <p className="text-xs text-gray-500">{action.implementation}</p>
+                      <p className="text-xs text-gray-500 mb-2">{action.implementation}</p>
+                      
+                      {/* 具體實施步驟 */}
+                      {action.specificSteps && action.specificSteps.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs font-medium text-gray-700 mb-1">具體步驟：</p>
+                          <ul className="text-xs text-gray-600 space-y-1">
+                            {action.specificSteps.map((step, stepIndex) => (
+                              <li key={stepIndex} className="flex items-start">
+                                <span className="text-gray-400 mr-1">•</span>
+                                <span>{step}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {/* 可衡量目標 */}
+                      {action.measurableGoals && action.measurableGoals.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs font-medium text-gray-700 mb-1">預期成果：</p>
+                          <ul className="text-xs text-gray-600 space-y-1">
+                            {action.measurableGoals.map((goal, goalIndex) => (
+                              <li key={goalIndex} className="flex items-start">
+                                <span className="text-green-500 mr-1">✓</span>
+                                <span>{goal}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -262,7 +421,37 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
                       </div>
                       <h5 className="font-semibold text-gray-800 mb-1">{action.title}</h5>
                       <p className="text-sm text-gray-600 mb-2">{action.description}</p>
-                      <p className="text-xs text-gray-500">{action.implementation}</p>
+                      <p className="text-xs text-gray-500 mb-2">{action.implementation}</p>
+                      
+                      {/* 具體實施步驟 */}
+                      {action.specificSteps && action.specificSteps.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs font-medium text-gray-700 mb-1">具體步驟：</p>
+                          <ul className="text-xs text-gray-600 space-y-1">
+                            {action.specificSteps.map((step, stepIndex) => (
+                              <li key={stepIndex} className="flex items-start">
+                                <span className="text-gray-400 mr-1">•</span>
+                                <span>{step}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {/* 可衡量目標 */}
+                      {action.measurableGoals && action.measurableGoals.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs font-medium text-gray-700 mb-1">預期成果：</p>
+                          <ul className="text-xs text-gray-600 space-y-1">
+                            {action.measurableGoals.map((goal, goalIndex) => (
+                              <li key={goalIndex} className="flex items-start">
+                                <span className="text-green-500 mr-1">✓</span>
+                                <span>{goal}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

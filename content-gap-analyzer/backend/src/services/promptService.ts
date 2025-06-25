@@ -38,34 +38,35 @@ class PromptService {
    * 初始化標準化 Prompt v2.0
    */
   private initializePrompts(): void {
-    // Content Refinement Prompt v2.0 (英文統一格式)
+    // Content Refinement Prompt v2.1 (繁體中文統一格式)
     this.registerPrompt({
       id: 'content_refinement_v2',
-      name: 'Content Refinement Prompt v2.0',
+      name: 'Content Refinement Prompt v2.1 (繁體中文)',
       category: 'content_refinement',
-      version: '2.0.0',
-      template: `You are an SEO Content Analysis Assistant. Your task is to read the provided text chunk and extract ONLY the key information that contains the following elements:
+      version: '2.1.0',
+      template: `你是一位 SEO 內容分析助理。你的任務是閱讀提供的文本片段，並僅提取包含以下元素的關鍵資訊：
 
-- Core arguments, claims, and conclusions
-- Specific data, statistics, years, or monetary amounts
-- Mentioned product names, technical terms, legal regulations, people, or organization names (entities)
-- Clear, actionable recommendations, tips, or operational steps
+- 核心論點、主張和結論
+- 具體數據、統計資料、年份或金額
+- 提及的產品名稱、技術術語、法律法規、人物或組織名稱（實體）
+- 明確、可執行的建議、技巧或操作步驟
 
-Your output MUST follow these rules:
-1. Return results in bullet point format (using '-' symbol)
-2. Ignore all introductions, greetings, transitional phrases, and subjective adjectives
-3. Maintain neutrality and objectivity, extract only facts and key points
-4. Each bullet point should be concise but complete (10-50 words)
-5. Focus on factual content that would be relevant for SEO gap analysis
+你的輸出必須遵循以下規則：
+1. 以條列格式返回結果（使用「-」符號）
+2. 忽略所有引言、問候、過渡性語句和主觀形容詞
+3. 保持中立和客觀，僅提取事實和要點
+4. 每個條列點應簡潔但完整（10-50 字）
+5. 專注於與 SEO 差距分析相關的事實內容
+6. 保持繁體中文輸出
 
-Text content:
+文本內容：
 {{content}}`,
       variables: ['content'],
       metadata: {
-        language: 'en',
+        language: 'zh-TW',
         maxTokens: 1500,
         temperature: 0.3,
-        description: 'Refined prompt for extracting key facts and entities from web content'
+        description: '用於從網頁內容中提取關鍵事實和實體的精煉 Prompt（繁體中文）'
       }
     });
 
@@ -182,8 +183,20 @@ Text content:
         "impact": "high",
         "effort": "medium",
         "timeline": "1-2 週",
-        "implementation": "訪談行業專家或引用權威來源",
-        "expectedOutcome": "改善權威性和專業性信號"
+        "implementation": "1. 識別 3-5 位相關領域專家 2. 進行訪談或收集公開聲明 3. 在文章頂部或側邊欄新增專家引言區塊 4. 包含專家照片、職稱和簡介",
+        "expectedOutcome": "預期提升權威性分數 15-25 分，增加 Google 對內容可信度的評估",
+        "specificSteps": [
+          "研究並列出 5-10 位行業權威專家",
+          "撰寫專業的訪談邀請郵件",
+          "準備 3-5 個核心問題進行訪談",
+          "設計專家引言的視覺布局",
+          "在文章中戰略性地放置專家觀點"
+        ],
+        "measurableGoals": [
+          "至少獲得 2 位專家的正式引言",
+          "專家區塊的用戶停留時間增加 30%",
+          "社交媒體分享率提升 20%"
+        ]
       }
     ],
     "shortTerm": [
@@ -194,8 +207,20 @@ Text content:
         "impact": "medium",
         "effort": "low",
         "timeline": "3-5 天",
-        "implementation": "研究並整合 2024 年行業統計數據",
-        "expectedOutcome": "改善可信度和相關性"
+        "implementation": "1. 搜尋 2024 年相關行業報告 2. 從政府機構獲取官方統計 3. 引用學術研究和白皮書 4. 建立數據來源清單並定期更新",
+        "expectedOutcome": "提升內容的事實準確性和時效性，改善 E-E-A-T 中的信任度評分",
+        "specificSteps": [
+          "建立可信數據來源清單（政府、學術機構、行業組織）",
+          "每月檢查並更新統計數據",
+          "為每個數據點添加來源連結",
+          "創建數據視覺化圖表（如需要）",
+          "在文章末尾添加「數據來源」區塊"
+        ],
+        "measurableGoals": [
+          "至少新增 5-8 個 2024 年的統計數據",
+          "所有數據都有明確的來源標註",
+          "用戶對內容的信任度評分提升 15%"
+        ]
       }
     ],
     "longTerm": [
@@ -206,8 +231,22 @@ Text content:
         "impact": "high",
         "effort": "high",
         "timeline": "4-6 週",
-        "implementation": "記錄實際客戶/專案成果與指標",
-        "expectedOutcome": "顯著改善經驗和專業性信號"
+        "implementation": "1. 識別 2-3 個成功案例 2. 進行深度訪談和數據收集 3. 撰寫詳細的案例分析 4. 包含前後對比數據和視覺元素 5. 獲得案例主體的使用許可",
+        "expectedOutcome": "顯著改善經驗和專業性信號，建立內容的實用性和可信度",
+        "specificSteps": [
+          "制定案例研究的標準化模板",
+          "聯繫並獲得客戶/合作夥伴參與同意",
+          "收集量化數據（ROI、成效指標等）",
+          "進行結構化訪談記錄實施過程",
+          "創建案例研究的多媒體展示",
+          "建立案例研究的更新和維護流程"
+        ],
+        "measurableGoals": [
+          "完成至少 2 個詳細案例研究",
+          "每個案例包含至少 5 個量化指標",
+          "案例研究頁面的轉換率達到 8-12%",
+          "獲得案例主體的正面推薦或證言"
+        ]
       }
     ]
   },

@@ -4,12 +4,12 @@ import logger from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
 // import { PageContent } from '../types'; // 暫時註解，使用新的 ScrapeResult
 
-// 強化版錯誤分類策略 - 按照 Claude.md 規格
+// 簡化錯誤分類策略 - 4 種主要錯誤類型
 export interface ScrapeResult {
   url: string;
   content: string | null;
   success: boolean;
-  error?: 'TimeoutError' | 'NavigationError' | 'SelectorNotFound' | 'AntiScraping' | 'UnexpectedContent';
+  error?: 'TIMEOUT' | 'NETWORK' | 'BLOCKED' | 'CONTENT_ERROR';
   errorDetails?: string;
   // 向後兼容的字段
   title?: string;
@@ -28,19 +28,31 @@ class PlaywrightService {
   private async initializeIfNeeded() {
     if (!this.browser) {
       try {
+        // 根據環境調整啟動參數
+        const browserArgs = process.env.NODE_ENV === 'production' ? [
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--disable-gpu',
+          '--disable-extensions',
+          '--disable-default-apps'
+        ] : [
+          '--no-sandbox',  // 只在開發環境使用
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--disable-gpu'
+        ];
+
         this.browser = await chromium.launch({
           headless: true,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu'
-          ]
+          args: browserArgs
         });
-        logger.info('Playwright browser initialized successfully');
+        
+        logger.info(`Playwright browser initialized successfully (${process.env.NODE_ENV} mode)`);
       } catch (error: any) {
         logger.error('Failed to initialize Playwright browser:', error);
         throw new AppError('Failed to initialize browser', 500, 'PLAYWRIGHT_INIT_ERROR');
@@ -61,7 +73,7 @@ class PlaywrightService {
       
       // 驗證 URL 格式
       if (!this.isValidUrl(url)) {
-        return this.createErrorResult(url, 'NavigationError', 'Invalid URL format');
+        return this.createErrorResult(url, 'NETWORK', 'Invalid URL format');
       }
       
       page = await this.browser!.newPage({
@@ -79,7 +91,7 @@ class PlaywrightService {
           timeout: 45000 
         });
       } catch (error: any) {
-        return this.classifyNavigationError(url, error);
+        return this.classifyError(url, error);
       }
       
       // 檢查 HTTP 狀態碼
@@ -90,7 +102,7 @@ class PlaywrightService {
         if (status >= 400) {
           return this.createErrorResult(
             url, 
-            'NavigationError', 
+            status === 429 ? 'BLOCKED' : 'NETWORK', 
             `HTTP ${status}: ${this.getHttpErrorMessage(status)}`
           );
         }
@@ -101,7 +113,7 @@ class PlaywrightService {
       if (!this.isHtmlContent(contentType)) {
         return this.createErrorResult(
           url,
-          'UnexpectedContent',
+          'CONTENT_ERROR',
           `Unexpected content type: ${contentType}`
         );
       }
@@ -110,13 +122,13 @@ class PlaywrightService {
       try {
         await this.waitForMeaningfulContent(page);
       } catch (error: any) {
-        return this.createErrorResult(url, 'SelectorNotFound', 'Main content selectors not found');
+        return this.createErrorResult(url, 'CONTENT_ERROR', 'Main content selectors not found');
       }
       
       // 檢測反爬蟲機制
       const antiScrapingDetected = await this.detectAntiScraping(page);
       if (antiScrapingDetected) {
-        return this.createErrorResult(url, 'AntiScraping', antiScrapingDetected);
+        return this.createErrorResult(url, 'BLOCKED', antiScrapingDetected);
       }
       
       // 提取頁面內容
@@ -124,7 +136,7 @@ class PlaywrightService {
       
       // 驗證內容品質
       if (!this.isValidContent(extractedContent.cleanedContent || '')) {
-        return this.createErrorResult(url, 'SelectorNotFound', 'No meaningful content found');
+        return this.createErrorResult(url, 'CONTENT_ERROR', 'No meaningful content found');
       }
       
       logger.info(`Enhanced scraping successful: ${url} (${extractedContent.cleanedContent?.length || 0} chars)`);
@@ -138,7 +150,7 @@ class PlaywrightService {
       
     } catch (error: any) {
       logger.error(`Enhanced scraping failed for ${url}:`, error);
-      return this.classifyUnexpectedError(url, error);
+      return this.classifyError(url, error);
     } finally {
       if (page) {
         await page.close().catch(err => logger.warn('Failed to close page:', err));
@@ -154,27 +166,77 @@ class PlaywrightService {
     const results: ScrapeResult[] = [];
     const concurrentLimit = 3; // Limit concurrent pages to avoid overwhelming the browser
     
-    // Process URLs in batches
-    for (let i = 0; i < urls.length; i += concurrentLimit) {
-      const batch = urls.slice(i, i + concurrentLimit);
-      const batchPromises = batch.map(async (url) => {
+    try {
+      // Process URLs in batches with proper error recovery
+      for (let i = 0; i < urls.length; i += concurrentLimit) {
+        const batch = urls.slice(i, i + concurrentLimit);
+        
         try {
-          return await this.scrapePage(url);
-        } catch (error) {
-          logger.warn(`Failed to scrape ${url}:`, error);
-          return this.createErrorResult(url, 'UnexpectedContent', `Batch scraping failed: ${error}`);
+          const batchPromises = batch.map(async (url) => {
+            try {
+              return await this.scrapePage(url);
+            } catch (error) {
+              logger.warn(`Failed to scrape ${url}:`, error);
+              return this.createErrorResult(url, 'CONTENT_ERROR', `Batch scraping failed: ${error}`);
+            }
+          });
+          
+          const batchResults = await Promise.allSettled(batchPromises);
+          
+          // Process settled results
+          batchResults.forEach((result, index) => {
+            if (result.status === 'fulfilled') {
+              results.push(result.value);
+            } else {
+              logger.error(`Batch promise rejected for ${batch[index]}:`, result.reason);
+              results.push(this.createErrorResult(
+                batch[index], 
+                'CONTENT_ERROR', 
+                `Promise rejection: ${result.reason?.message || result.reason}`
+              ));
+            }
+          });
+          
+        } catch (batchError) {
+          logger.error(`Entire batch failed (${batch.join(', ')}):`, batchError);
+          // Add error results for all URLs in failed batch
+          batch.forEach(url => {
+            results.push(this.createErrorResult(
+              url, 
+              'CONTENT_ERROR', 
+              `Batch processing failed: ${batchError}`
+            ));
+          });
         }
-      });
-      
-      const batchResults = await Promise.all(batchPromises);
-      
-      // Add all results (both successful and failed)
-      results.push(...batchResults);
-      
-      // Small delay between batches to be respectful
-      if (i + concurrentLimit < urls.length) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Small delay between batches to be respectful
+        if (i + concurrentLimit < urls.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
+      
+    } catch (criticalError) {
+      logger.error('Critical error in batch scraping, attempting browser recovery:', criticalError);
+      
+      // Force close and reinitialize browser on critical failure
+      try {
+        if (this.browser) {
+          await this.browser.close();
+          this.browser = null;
+        }
+      } catch (closeError) {
+        logger.warn('Failed to close browser during recovery:', closeError);
+      }
+      
+      // Add error results for any remaining URLs
+      const remainingUrls = urls.filter(url => !results.some(r => r.url === url));
+      remainingUrls.forEach(url => {
+        results.push(this.createErrorResult(
+          url, 
+          'CONTENT_ERROR', 
+          `Critical batch failure: ${criticalError}`
+        ));
+      });
     }
     
     const successfulResults = results.filter(r => r.success);
@@ -213,25 +275,34 @@ class PlaywrightService {
   }
   
   /**
-   * 助手方法：分類導航錯誤
+   * 助手方法：簡化錯誤分類
    */
-  private classifyNavigationError(url: string, error: any): ScrapeResult {
+  private classifyError(url: string, error: any): ScrapeResult {
     const errorMessage = error.message || error.toString();
     
+    // TIMEOUT - 超時相關錯誤
     if (error.name === 'TimeoutError' || errorMessage.includes('timeout')) {
-      return this.createErrorResult(url, 'TimeoutError', `Page load timeout: ${errorMessage}`);
+      return this.createErrorResult(url, 'TIMEOUT', `Timeout: ${errorMessage}`);
     }
     
-    if (errorMessage.includes('net::ERR_NAME_NOT_RESOLVED') || 
-        errorMessage.includes('net::ERR_CONNECTION_REFUSED')) {
-      return this.createErrorResult(url, 'NavigationError', `Connection failed: ${errorMessage}`);
+    // NETWORK - 網路連線錯誤
+    if (errorMessage.includes('net::ERR_') || 
+        errorMessage.includes('Connection') ||
+        errorMessage.includes('DNS') ||
+        errorMessage.includes('SSL')) {
+      return this.createErrorResult(url, 'NETWORK', `Network error: ${errorMessage}`);
     }
     
-    if (errorMessage.includes('net::ERR_SSL_')) {
-      return this.createErrorResult(url, 'NavigationError', `SSL error: ${errorMessage}`);
+    // BLOCKED - 存取被拒或防護機制
+    if (errorMessage.includes('blocked') ||
+        errorMessage.includes('forbidden') ||
+        errorMessage.includes('captcha') ||
+        errorMessage.includes('rate limit')) {
+      return this.createErrorResult(url, 'BLOCKED', `Access blocked: ${errorMessage}`);
     }
     
-    return this.createErrorResult(url, 'NavigationError', `Navigation failed: ${errorMessage}`);
+    // CONTENT_ERROR - 內容相關錯誤（預設）
+    return this.createErrorResult(url, 'CONTENT_ERROR', `Content error: ${errorMessage}`);
   }
   
   /**
@@ -440,22 +511,6 @@ class PlaywrightService {
     return true;
   }
   
-  /**
-   * 助手方法：分類意外錯誤
-   */
-  private classifyUnexpectedError(url: string, error: any): ScrapeResult {
-    const errorMessage = error.message || error.toString();
-    
-    if (error.name === 'TimeoutError' || errorMessage.includes('timeout')) {
-      return this.createErrorResult(url, 'TimeoutError', `Unexpected timeout: ${errorMessage}`);
-    }
-    
-    if (errorMessage.includes('Protocol error') || errorMessage.includes('Target closed')) {
-      return this.createErrorResult(url, 'UnexpectedContent', `Browser connection error: ${errorMessage}`);
-    }
-    
-    return this.createErrorResult(url, 'UnexpectedContent', `Unexpected error: ${errorMessage}`);
-  }
   
   async close() {
     if (this.browser) {

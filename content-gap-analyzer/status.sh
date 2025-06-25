@@ -61,10 +61,10 @@ echo "5. 檢查環境變數..."
 if [ -f "backend/.env" ]; then
     echo "   ✅ .env 配置文件存在"
     
-    if grep -q "GEMINI_API_KEY=" backend/.env && [ -n "$(grep GEMINI_API_KEY= backend/.env | cut -d= -f2)" ]; then
-        echo "   ✅ GEMINI_API_KEY 已設置"
+    if grep -q "OPENAI_API_KEY=" backend/.env && [ -n "$(grep OPENAI_API_KEY= backend/.env | cut -d= -f2)" ]; then
+        echo "   ✅ OPENAI_API_KEY 已設置"
     else
-        echo "   ⚠️  GEMINI_API_KEY 未設置或為空"
+        echo "   ⚠️  OPENAI_API_KEY 未設置或為空"
     fi
     
     if grep -q "SERPAPI_KEY=" backend/.env && [ -n "$(grep SERPAPI_KEY= backend/.env | cut -d= -f2)" ]; then
@@ -88,7 +88,7 @@ if curl -s http://localhost:3000 > /dev/null && curl -s http://localhost:3001/ap
     echo "   2. 輸入目標關鍵字和網頁 URL"
     echo "   3. 點擊「開始分析」按鈕"
     echo ""
-    echo "💡 提示: 確保 GEMINI_API_KEY 和 SERPAPI_KEY 已正確設置以進行完整分析"
+    echo "💡 提示: 確保 OPENAI_API_KEY 和 SERPAPI_KEY 已正確設置以進行完整分析"
 else
     echo "⚠️  部分服務未正常運行，請檢查上述錯誤"
 fi

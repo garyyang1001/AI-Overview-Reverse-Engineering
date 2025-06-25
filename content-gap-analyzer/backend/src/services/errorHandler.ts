@@ -45,12 +45,11 @@ class ErrorHandlerService {
    */
   private isRetryableError(errorType: PlaywrightErrorType): boolean {
     switch (errorType) {
-      case 'TimeoutError':
-      case 'NavigationError':
+      case 'TIMEOUT':
+      case 'NETWORK':
         return true;
-      case 'AntiScraping':
-      case 'SelectorNotFound':
-      case 'UnexpectedContent':
+      case 'BLOCKED':
+      case 'CONTENT_ERROR':
         return false;
       default:
         return false;
@@ -62,16 +61,14 @@ class ErrorHandlerService {
    */
   private getSuggestedAction(errorType: PlaywrightErrorType): string {
     switch (errorType) {
-      case 'TimeoutError':
+      case 'TIMEOUT':
         return '增加超時時間或檢查網路連接';
-      case 'NavigationError':
+      case 'NETWORK':
         return '檢查 URL 有效性和網站可訪問性';
-      case 'AntiScraping':
+      case 'BLOCKED':
         return '該網站使用反爬蟲機制，建議手動檢查內容';
-      case 'SelectorNotFound':
-        return '網頁結構可能已更改，無法提取有效內容';
-      case 'UnexpectedContent':
-        return '網頁返回非預期內容類型';
+      case 'CONTENT_ERROR':
+        return '網頁結構或內容類型無法處理';
       default:
         return '聯繫技術支援';
     }

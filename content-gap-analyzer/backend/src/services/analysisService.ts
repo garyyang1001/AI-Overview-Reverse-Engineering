@@ -161,7 +161,8 @@ class AnalysisService {
             ...validCompetitorPages[index],
             cleanedContent: refined.refinedSummary,
             headings: validCompetitorPages[index].headings || []
-          }))
+          })),
+          jobId: analysisId  // 使用 analysisId 作為 jobId 進行成本追蹤
         });
         
         processingSteps.aiAnalysisStatus = 'completed';

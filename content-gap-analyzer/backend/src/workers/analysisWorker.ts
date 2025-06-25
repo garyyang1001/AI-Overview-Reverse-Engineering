@@ -143,7 +143,7 @@ class AnalysisWorker {
           processingSteps.userPageStatus = 'failed';
           
           const playwrightError = errorHandler.classifyPlaywrightError(
-            userPageResult.error || 'UnexpectedContent',
+            userPageResult.error || 'CONTENT_ERROR',
             userPageUrl,
             userPageResult.errorDetails || 'Unknown error'
           );
@@ -281,6 +281,32 @@ class AnalysisWorker {
           competitorPages[index] && competitorPages[index].cleanedContent
         );
 
+        // 詳細記錄傳遞給 OpenAI 的數據
+        logger.info(`Job ${jobId}: Preparing data for OpenAI analysis`, {
+          targetKeyword,
+          userPageUrl: userPage.url,
+          userContentLength: refinedUserContent.refinedSummary?.length || 0,
+          competitorCount: validCompetitorContents.length,
+          aiOverviewLength: aiOverview.summaryText?.length || 0
+        });
+
+        // 記錄用戶頁面精煉摘要的前100字符
+        if (refinedUserContent.refinedSummary) {
+          logger.debug(`Job ${jobId}: User page refined summary preview:`, {
+            preview: refinedUserContent.refinedSummary.substring(0, 100) + '...',
+            fullLength: refinedUserContent.refinedSummary.length
+          });
+        }
+
+        // 記錄競爭對手精煉摘要
+        validCompetitorContents.forEach((refined, index) => {
+          logger.debug(`Job ${jobId}: Competitor ${index} refined summary:`, {
+            url: competitorPages[index]?.url,
+            preview: refined.refinedSummary?.substring(0, 100) + '...',
+            fullLength: refined.refinedSummary?.length || 0
+          });
+        });
+
         analysisResult = await openaiService.analyzeContentGap({
           targetKeyword,
           userPage: {
@@ -362,37 +388,113 @@ class AnalysisWorker {
   }
 
   /**
-   * 生成降級分析結果
+   * 生成降級分析結果（v5.1 結構）
    */
   private generateFallbackAnalysis(targetKeyword: string, aiOverview: any): any {
     return {
       executiveSummary: {
-        mainReasonForExclusion: `分析部分完成。由於技術問題，無法完成完整的 AI 分析。基於可用數據：關鍵字「${targetKeyword}」的搜索結果${aiOverview.fallbackUsed ? '使用了備用數據源' : '包含 AI Overview'}。`,
-        topPriorityAction: '建議手動檢查競爭對手內容以識別差距。'
+        mainReasonForExclusion: `⚠️ 技術問題導致分析部分完成。關鍵字「${targetKeyword}」的搜索結果${aiOverview.fallbackUsed ? '使用了備用數據源' : '包含 AI Overview'}，但無法完成完整的 AI 分析。`,
+        topPriorityAction: '請檢查系統設定並重新嘗試分析，或手動檢查競爭對手內容。',
+        confidenceScore: 30
       },
-      gapAnalysis: {
-        topicCoverage: {
-          score: 50,
-          missingTopics: ['需要手動分析'],
-          analysis: '由於技術問題，無法完成自動主題分析。請手動檢查競爭對手頁面內容。'
+      contentGapAnalysis: {
+        missingTopics: [
+          {
+            topic: '需要手動分析',
+            importance: 'high',
+            competitorCoverage: 0,
+            implementationComplexity: 'unknown',
+            description: '由於技術問題，無法完成自動主題分析。請手動檢查競爭對手頁面內容。'
+          }
+        ],
+        missingEntities: [
+          {
+            entity: '需要手動識別',
+            type: 'unknown',
+            relevance: 'high',
+            competitorMentions: 0,
+            description: '無法自動識別缺失實體。建議檢查競爭對手提及的品牌、人物、組織等。'
+          }
+        ],
+        contentDepthGaps: [
+          {
+            area: '整體內容分析',
+            currentDepth: 'unknown',
+            requiredDepth: 'unknown',
+            competitorAdvantage: '由於技術問題，無法評估競爭對手優勢'
+          }
+        ]
+      },
+      eatAnalysis: {
+        experience: {
+          userScore: 50,
+          competitorAverage: 50,
+          gaps: ['無法評估'],
+          opportunities: ['請重新嘗試分析']
         },
-        entityGaps: {
-          missingEntities: ['需要手動分析'],
-          analysis: '無法自動識別缺失實體。建議檢查競爭對手提及的品牌、人物、組織等。'
+        expertise: {
+          userScore: 50,
+          competitorAverage: 50,
+          gaps: ['無法評估'],
+          opportunities: ['請重新嘗試分析']
         },
-        E_E_A_T_signals: {
-          score: 50,
-          recommendations: ['添加專家引用', '增加可信來源', '提供作者資歷信息', '添加最新數據和統計']
+        authoritativeness: {
+          userScore: 50,
+          competitorAverage: 50,
+          gaps: ['無法評估'],
+          opportunities: ['請重新嘗試分析']
+        },
+        trustworthiness: {
+          userScore: 50,
+          competitorAverage: 50,
+          gaps: ['無法評估'],
+          opportunities: ['請重新嘗試分析']
         }
       },
-      actionablePlan: [
-        {
-          type: 'IMPROVE_EEAT',
-          title: '手動競爭對手分析',
-          description: '由於自動分析失敗，請手動訪問競爭對手頁面並比較內容差距。',
-          priority: 'High'
-        }
-      ]
+      actionablePlan: {
+        immediate: [
+          {
+            action: '檢查系統設定',
+            title: '檢查 API 設定',
+            description: '驗證 OpenAI API 密鑰是否正確配置並重新嘗試分析',
+            impact: 'high',
+            effort: 'low',
+            timeline: '5-10 分鐘',
+            implementation: '1. 檢查 .env 文件中的 OPENAI_API_KEY 2. 重啟後端服務 3. 重新提交分析',
+            expectedOutcome: '修復技術問題，獲得完整的分析結果'
+          }
+        ],
+        shortTerm: [
+          {
+            action: '手動競爭對手分析',
+            title: '手動內容比較',
+            description: '在系統修復前，手動比較競爭對手內容',
+            impact: 'medium',
+            effort: 'high',
+            timeline: '1-2 小時',
+            implementation: '1. 訪問 AI Overview 中的競爭對手頁面 2. 記錄內容差異 3. 識別缺失主題和實體',
+            expectedOutcome: '獲得基本的內容差距洞察'
+          }
+        ],
+        longTerm: []
+      },
+      competitorInsights: {
+        topPerformingCompetitor: {
+          url: 'unknown',
+          strengths: ['無法分析'],
+          keyDifferentiators: ['請重新嘗試分析']
+        },
+        commonPatterns: ['由於技術問題，無法識別競爭對手的共同模式']
+      },
+      successMetrics: {
+        primaryKPI: '修復系統問題',
+        trackingRecommendations: [
+          '檢查系統日誌確認錯誤原因',
+          '驗證 API 配置',
+          '重新執行分析'
+        ],
+        timeframe: '立即處理'
+      }
     };
   }
 
