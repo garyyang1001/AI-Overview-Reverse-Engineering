@@ -1,0 +1,174 @@
+# ================================
+# 🔒 AIO-Auditor 安全防護配置
+# ================================
+
+# 環境變數與敏感資料 (CRITICAL - 絕不提交)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging
+.env.production
+*.env
+.env.*
+!.env.example
+
+# API 密鑰與配置文件
+config/secrets.json
+config/keys.json
+config/production.json
+secrets/
+keys/
+*.key
+*.pem
+*.p12
+*.pfx
+
+# 依賴套件
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm
+.yarn-integrity
+
+# 建置輸出
+dist/
+build/
+out/
+*.tsbuildinfo
+.next/
+
+# 日誌文件（包含可能的敏感資訊）
+*.log
+logs/
+backend-*.log
+frontend-*.log
+debug-*.log
+error-*.log
+
+# 快取與暫存
+.cache/
+.temp/
+.tmp/
+.nuxt/
+.vuepress/
+dump.rdb
+redis-dump.rdb
+
+# 測試覆蓋率
+coverage/
+*.lcov
+.nyc_output
+
+# IDE 與編輯器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# 作業系統生成文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 運行時文件
+*.pid
+*.seed
+*.pid.lock
+.lock-wscript
+
+# TypeScript
+*.tsbuildinfo
+
+# ESLint 快取
+.eslintcache
+
+# Stylelint 快取
+.stylelintcache
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+Dockerfile.local
+
+# 本地開發
+.local
+local/
+
+# 備份文件
+*.backup
+*.bak
+*.orig
+
+# 壓縮檔案（可能包含敏感資料）
+*.zip
+*.tar.gz
+*.rar
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Jest
+coverage/
+.jest/
+
+# Storybook
+storybook-static/
+
+# 臨時文件
+tmp/
+temp/
+
+# 特定於項目的敏感文件
+backend/.env*
+content-gap-analyzer/backend/.env*
+content-gap-analyzer/frontend/.env*
+
+# 數據庫文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 證書和金鑰
+*.crt
+*.csr
+*.key
+*.pem
+
+# 開發工具配置（可能包含路徑等敏感資訊）
+.vscode/settings.json
+.idea/workspace.xml
