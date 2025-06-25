@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { AnalysisRequest, AnalysisResult } from '../../../shared/types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3002/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3004/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -11,34 +11,53 @@ const api = axios.create({
 });
 
 export interface StartAnalysisResponse {
-  analysisId: string;
+  jobId: string;
   status: string;
-  fromCache?: boolean;
-  result?: AnalysisResult;
   message?: string;
 }
 
-export interface AnalysisStatus {
-  analysisId: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+export interface JobStatus {
+  id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'completed_with_errors';
   progress?: number;
-  error?: string;
+  error?: {
+    code: string;
+    message: string;
+    details?: string;
+  };
+  warnings?: Array<{
+    code: string;
+    message: string;
+    details?: string;
+  }>;
+  data?: AnalysisResult;
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
 }
 
 export const analysisApi = {
   startAnalysis: async (data: AnalysisRequest): Promise<StartAnalysisResponse> => {
-    const response = await api.post<StartAnalysisResponse>('/analysis/start', data);
+    const response = await api.post<StartAnalysisResponse>('/analyze', data);
     return response.data;
   },
   
-  getAnalysisStatus: async (analysisId: string): Promise<AnalysisStatus> => {
-    const response = await api.get<AnalysisStatus>(`/analysis/status/${analysisId}`);
+  getJobStatus: async (jobId: string): Promise<JobStatus> => {
+    const response = await api.get<JobStatus>(`/results/${jobId}`);
     return response.data;
+  },
+  
+  // Backward compatibility methods
+  getAnalysisStatus: async (analysisId: string): Promise<JobStatus> => {
+    return analysisApi.getJobStatus(analysisId);
   },
   
   getAnalysisResult: async (analysisId: string): Promise<AnalysisResult> => {
-    const response = await api.get<AnalysisResult>(`/analysis/result/${analysisId}`);
-    return response.data;
+    const jobStatus = await analysisApi.getJobStatus(analysisId);
+    if (jobStatus.data) {
+      return jobStatus.data;
+    }
+    throw new Error('Analysis result not available');
   },
 };
 

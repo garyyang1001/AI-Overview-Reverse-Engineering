@@ -1,5 +1,5 @@
 import { Worker, Job } from 'bullmq';
-import redisClient from '../config/redis';
+import IORedis from 'ioredis';
 import { AnalysisJobData } from '../services/queueService';
 import logger from '../utils/logger';
 
@@ -9,18 +9,31 @@ import { playwrightService } from '../services/playwrightService';
 import { contentRefinementService } from '../services/contentRefinementService';
 import { openaiService } from '../services/openaiService';
 
+// 導入錯誤處理系統
+import { errorHandler } from '../services/errorHandler';
+import { WorkerStepError } from '../types/errors';
+
 /**
  * 分析 Worker - 處理完整的 5 階段分析工作流
  */
 class AnalysisWorker {
   private worker: Worker<AnalysisJobData>;
+  private redisConnection: IORedis;
 
   constructor() {
+    // 創建專用的 Redis 連接給 Worker
+    this.redisConnection = new IORedis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+    });
+
     this.worker = new Worker<AnalysisJobData>(
       'analysis',
       this.processAnalysisJob.bind(this),
       {
-        connection: redisClient,
+        connection: this.redisConnection,
         concurrency: 2, // 同時處理 2 個任務
         limiter: {
           max: 10,      // 每 10 秒最多處理 10 個任務
@@ -62,7 +75,7 @@ class AnalysisWorker {
     logger.info(`Starting analysis job ${jobId} for keyword: ${targetKeyword}`);
 
     try {
-      // 初始化處理步驟狀態
+      // 初始化處理步驟狀態和錯誤追蹤
       const processingSteps = {
         serpApiStatus: 'pending',
         userPageStatus: 'pending',
@@ -71,19 +84,49 @@ class AnalysisWorker {
         aiAnalysisStatus: 'pending'
       };
 
+      const completedSteps: string[] = [];
+      const stepErrors: WorkerStepError[] = [];
+      const stepWarnings: WorkerStepError[] = [];
+
       // 階段 1: AIO 數據提取 (10%)
       await job.updateProgress(10);
       processingSteps.serpApiStatus = 'processing';
       
       logger.info(`Job ${jobId}: Fetching AI Overview for keyword: ${targetKeyword}`);
-      const aiOverview = await serpApiService.getAIOverview(targetKeyword);
       
-      if (!aiOverview) {
+      let aiOverview;
+      try {
+        aiOverview = await serpApiService.getAIOverview(targetKeyword);
+        
+        if (!aiOverview) {
+          processingSteps.serpApiStatus = 'failed';
+          const stepError = errorHandler.createWorkerStepError(
+            'serpapi',
+            'SERPAPI_FAILED',
+            'No search data available for the given keyword',
+            [],
+            false
+          );
+          stepErrors.push(stepError);
+          throw new Error('No search data available for the given keyword');
+        }
+        
+        processingSteps.serpApiStatus = 'completed';
+        completedSteps.push('serpapi');
+        
+      } catch (error: any) {
         processingSteps.serpApiStatus = 'failed';
-        throw new Error('No search data available for the given keyword');
+        const stepError = errorHandler.createWorkerStepError(
+          'serpapi',
+          'SERPAPI_FAILED',
+          error.message,
+          [],
+          false
+        );
+        stepErrors.push(stepError);
+        throw error;
       }
       
-      processingSteps.serpApiStatus = 'completed';
       await job.updateProgress(30);
 
       // 階段 2: 批量內容爬取 (30-60%)
@@ -92,14 +135,57 @@ class AnalysisWorker {
       processingSteps.competitorPagesStatus = 'processing';
 
       // 爬取用戶頁面
-      const userPage = await playwrightService.scrapePage(userPageUrl);
-      
-      if (!userPage.success) {
+      let userPage;
+      try {
+        const userPageResult = await playwrightService.scrapePage(userPageUrl);
+        
+        if (!userPageResult.success) {
+          processingSteps.userPageStatus = 'failed';
+          
+          const playwrightError = errorHandler.classifyPlaywrightError(
+            userPageResult.error || 'UnexpectedContent',
+            userPageUrl,
+            userPageResult.errorDetails || 'Unknown error'
+          );
+          
+          const stepError = errorHandler.createWorkerStepError(
+            'user_scraping',
+            'SCRAPING_FAILED',
+            `Failed to scrape user's page: ${userPageResult.error}`,
+            [playwrightError],
+            false
+          );
+          stepErrors.push(stepError);
+          throw new Error(`Failed to scrape user's page: ${userPageResult.error} - ${userPageResult.errorDetails}`);
+        }
+        
+        // 轉換為舊格式以兼容後續處理
+        userPage = {
+          url: userPageResult.url,
+          title: userPageResult.title || '',
+          headings: userPageResult.headings || [],
+          cleanedContent: userPageResult.content || '',
+          metaDescription: userPageResult.metaDescription || ''
+        };
+        
+        processingSteps.userPageStatus = 'completed';
+        completedSteps.push('user_scraping');
+        
+      } catch (error: any) {
         processingSteps.userPageStatus = 'failed';
-        throw new Error(`Failed to scrape user's page: ${userPage.error}`);
+        if (!stepErrors.find(e => e.step === 'user_scraping')) {
+          const stepError = errorHandler.createWorkerStepError(
+            'user_scraping',
+            'SCRAPING_FAILED',
+            error.message,
+            [],
+            false
+          );
+          stepErrors.push(stepError);
+        }
+        throw error;
       }
       
-      processingSteps.userPageStatus = 'completed';
       await job.updateProgress(40);
 
       // 準備競爭者 URL 列表
@@ -115,11 +201,38 @@ class AnalysisWorker {
       // 批量爬取競爭者頁面
       let competitorPages: any[] = [];
       try {
-        competitorPages = await playwrightService.scrapeMultiplePages(uniqueCompetitorUrls);
-        processingSteps.competitorPagesStatus = 'completed';
+        const competitorResults = await playwrightService.scrapeMultiplePages(uniqueCompetitorUrls);
+        const successfulResults = competitorResults.filter(result => result.success);
+        const failedResults = competitorResults.filter(result => !result.success);
+        
+        // 轉換成功的結果為舊格式
+        competitorPages = successfulResults.map(result => ({
+          url: result.url,
+          title: result.title || '',
+          headings: result.headings || [],
+          cleanedContent: result.content || '',
+          metaDescription: result.metaDescription || ''
+        }));
+        
+        // 記錄失敗的頁面
+        if (failedResults.length > 0) {
+          logger.warn(`Job ${jobId}: ${failedResults.length}/${competitorResults.length} competitor pages failed to scrape`);
+          failedResults.forEach(result => {
+            logger.warn(`Failed to scrape ${result.url}: ${result.error} - ${result.errorDetails}`);
+          });
+        }
+        
+        if (competitorPages.length === 0) {
+          processingSteps.competitorPagesStatus = 'failed';
+          logger.warn(`Job ${jobId}: No competitor pages successfully scraped`);
+        } else if (failedResults.length > 0) {
+          processingSteps.competitorPagesStatus = 'partial';
+        } else {
+          processingSteps.competitorPagesStatus = 'completed';
+        }
       } catch (error: any) {
         logger.warn(`Job ${jobId}: Competitor scraping failed: ${error.message}`);
-        processingSteps.competitorPagesStatus = 'partial';
+        processingSteps.competitorPagesStatus = 'failed';
         competitorPages = [];
       }
 
@@ -134,7 +247,7 @@ class AnalysisWorker {
       let refinementSuccessful = true;
 
       try {
-        refinedContents = await contentRefinementService.refineMultiplePages(allPages);
+        refinedContents = await contentRefinementService.refineMultiplePages(allPages, jobId);
         processingSteps.contentRefinementStatus = 'completed';
       } catch (error: any) {
         logger.warn(`Job ${jobId}: Content refinement failed: ${error.message}`);
@@ -178,7 +291,8 @@ class AnalysisWorker {
           competitorPages: validCompetitorContents.map((refined, index) => ({
             ...competitorPages[index],
             cleanedContent: refined.refinedSummary
-          }))
+          })),
+          jobId  // v5.1 新增：傳遞 jobId 用於成本追蹤
         });
 
         processingSteps.aiAnalysisStatus = 'completed';
@@ -193,6 +307,18 @@ class AnalysisWorker {
       await job.updateProgress(95);
 
       // 階段 5: 結果準備與儲存 (95-100%)
+      // 評估任務完成狀態
+      const jobCompletion = errorHandler.evaluateJobCompletion(
+        completedSteps,
+        stepErrors,
+        stepWarnings
+      );
+
+      // 記錄錯誤統計
+      if (stepErrors.length > 0 || stepWarnings.length > 0) {
+        errorHandler.logErrorStatistics([...stepErrors, ...stepWarnings]);
+      }
+
       const result = {
         ...analysisResult,
         analysisId: jobId,
@@ -205,17 +331,28 @@ class AnalysisWorker {
         processingSteps,
         usedFallbackData: aiOverview.fallbackUsed || false,
         refinementSuccessful,
-        analysisQuality: this.assessAnalysisQuality(
-          processingSteps,
-          competitorPages.length,
-          uniqueCompetitorUrls.length,
-          refinementSuccessful
-        )
+        
+        // v5.1 新增：分層錯誤處理結果
+        jobCompletion,
+        errors: stepErrors.map(error => errorHandler.translateToFrontendError(error, jobId)),
+        warnings: stepWarnings.map(warning => errorHandler.translateToFrontendError(warning, jobId)),
+        qualityAssessment: {
+          score: jobCompletion.qualityScore,
+          level: this.getQualityLevel(jobCompletion.qualityScore),
+          completedSteps: completedSteps.length,
+          totalSteps: 5,
+          criticalFailures: stepErrors.filter(e => !e.canContinue).length,
+          fallbacksUsed: jobCompletion.fallbacksUsed
+        }
       };
 
       await job.updateProgress(100);
 
-      logger.info(`Job ${jobId}: Analysis completed successfully`);
+      const statusMessage = jobCompletion.status === 'completed' 
+        ? 'completed successfully'
+        : `completed with ${jobCompletion.status === 'completed_with_errors' ? 'errors' : 'issues'}`;
+      
+      logger.info(`Job ${jobId}: Analysis ${statusMessage} (quality: ${jobCompletion.qualityScore})`);
       return result;
 
     } catch (error: any) {
@@ -259,26 +396,11 @@ class AnalysisWorker {
     };
   }
 
+
   /**
-   * 評估分析品質
+   * 獲取品質等級（新版本）
    */
-  private assessAnalysisQuality(
-    processingSteps: any,
-    successfulCompetitors: number,
-    totalCompetitors: number,
-    refinementSuccessful: boolean
-  ): 'excellent' | 'good' | 'fair' | 'poor' {
-    let score = 0;
-
-    if (processingSteps.serpApiStatus === 'completed') score += 25;
-    if (processingSteps.userPageStatus === 'completed') score += 25;
-    
-    const competitorSuccessRate = totalCompetitors > 0 ? successfulCompetitors / totalCompetitors : 0;
-    score += Math.floor(competitorSuccessRate * 25);
-    
-    if (refinementSuccessful) score += 15;
-    if (processingSteps.aiAnalysisStatus === 'completed') score += 10;
-
+  private getQualityLevel(score: number): 'excellent' | 'good' | 'fair' | 'poor' {
     if (score >= 85) return 'excellent';
     if (score >= 70) return 'good';
     if (score >= 50) return 'fair';
@@ -291,6 +413,7 @@ class AnalysisWorker {
   async shutdown(): Promise<void> {
     try {
       await this.worker.close();
+      await this.redisConnection.quit();
       logger.info('Analysis worker shutdown completed');
     } catch (error) {
       logger.error('Error during worker shutdown:', error);
@@ -301,17 +424,6 @@ class AnalysisWorker {
 // 創建並啟動 Worker
 const analysisWorker = new AnalysisWorker();
 
-// 優雅關閉處理
-process.on('SIGINT', async () => {
-  logger.info('Shutting down analysis worker...');
-  await analysisWorker.shutdown();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  logger.info('Shutting down analysis worker...');
-  await analysisWorker.shutdown();
-  process.exit(0);
-});
+logger.info('Analysis Worker initialized successfully');
 
 export default analysisWorker;

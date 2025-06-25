@@ -27,6 +27,93 @@ export interface AIOverviewData {
   structure?: any;
 }
 
+// v5.1 Types - Executive Summary
+export interface ExecutiveSummary {
+  mainReasonForExclusion: string;
+  topPriorityAction: string;
+  confidenceScore?: number;
+}
+
+// v5.1 Types - Content Gap Analysis
+export interface MissingTopic {
+  topic: string;
+  description: string;
+  importance?: string;
+  competitorCoverage?: number;
+  implementationComplexity?: string;
+}
+
+export interface MissingEntity {
+  entity: string;
+  type: string;
+  relevance: string;
+  competitorMentions?: number;
+  description: string;
+}
+
+export interface ContentDepthGap {
+  area: string;
+  currentDepth: string;
+  requiredDepth: string;
+  competitorAdvantage: string;
+}
+
+export interface ContentGapAnalysis {
+  missingTopics: MissingTopic[];
+  missingEntities: MissingEntity[];
+  contentDepthGaps?: ContentDepthGap[];
+}
+
+// v5.1 Types - E-E-A-T Analysis
+export interface EATDimension {
+  userScore: number;
+  competitorAverage: number;
+  gaps: string[];
+  opportunities: string[];
+}
+
+export interface EATAnalysis {
+  experience: EATDimension;
+  expertise: EATDimension;
+  authoritativeness: EATDimension;
+  trustworthiness: EATDimension;
+}
+
+// Additional v5.1 interfaces from prompt template
+export interface CompetitorInsights {
+  topPerformingCompetitor: {
+    url: string;
+    strengths: string[];
+    keyDifferentiators: string[];
+  };
+  commonPatterns: string[];
+}
+
+export interface SuccessMetrics {
+  primaryKPI: string;
+  trackingRecommendations: string[];
+  timeframe: string;
+}
+
+// v5.1 Types - Actionable Plan
+export interface ActionItem {
+  action: string;
+  title: string;
+  description: string;
+  impact: 'high' | 'medium' | 'low';
+  effort: 'high' | 'medium' | 'low';
+  timeline: string;
+  implementation: string;
+  expectedOutcome: string;
+}
+
+export interface ActionablePlan {
+  immediate?: ActionItem[];
+  shortTerm?: ActionItem[];
+  longTerm?: ActionItem[];
+}
+
+// Legacy types for backward compatibility
 export interface TopicCoverage {
   score: number;
   missingTopics: string[];
@@ -49,22 +136,23 @@ export interface GapAnalysis {
   E_E_A_T_signals: EEATSignals;
 }
 
-export interface ActionItem {
-  type: 'ADD_SECTION' | 'RESTRUCTURE' | 'ENRICH_CONTENT' | 'ADD_ENTITY' | 'IMPROVE_EEAT';
-  title: string;
-  description: string;
-  priority: 'High' | 'Medium' | 'Low';
-}
-
+// v5.1 Analysis Result
 export interface AnalysisResult {
-  executiveSummary: string;
-  gapAnalysis: GapAnalysis;
-  actionablePlan: ActionItem[];
-  timestamp: string;
+  // Core v5.1 structure (matches prompt template output)
+  executiveSummary: ExecutiveSummary;
+  contentGapAnalysis: ContentGapAnalysis;
+  eatAnalysis: EATAnalysis;
+  actionablePlan: ActionablePlan;
+  competitorInsights?: CompetitorInsights;
+  successMetrics?: SuccessMetrics;
+  
+  // Additional data
   analysisId: string;
-  // 新增 AI Overview 原始數據
+  timestamp: string;
   aiOverviewData?: AIOverviewData;
   competitorUrls?: string[];
+  
+  // Processing metadata
   processingSteps?: {
     serpApiStatus: string;
     userPageStatus: string;
@@ -72,6 +160,19 @@ export interface AnalysisResult {
     contentRefinementStatus: string;
     aiAnalysisStatus: string;
   };
+  
+  // Quality and error information
+  qualityAssessment?: any;
+  jobCompletion?: any;
+  errors?: string[];
+  warnings?: Array<{
+    code: string;
+    message: string;
+    details?: string;
+  }>;
+  
+  // Legacy compatibility - deprecated but maintained for backward compatibility
+  gapAnalysis?: GapAnalysis;
 }
 
 export interface AnalysisError {

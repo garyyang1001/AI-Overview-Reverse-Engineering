@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { analysisApi, AnalysisStatus } from '../services/api';
+import { analysisApi, JobStatus } from '../services/api';
 import { AnalysisRequest, AnalysisResult } from '../../../shared/types';
 
 export const useAnalysis = () => {
@@ -14,50 +14,48 @@ export const useAnalysis = () => {
   const startAnalysisMutation = useMutation({
     mutationFn: analysisApi.startAnalysis,
     onSuccess: (data) => {
-      if (data.fromCache && data.result) {
-        // If result is from cache, set it immediately
-        setResult(data.result);
-        toast.success('從快取中獲取分析結果！');
-      } else {
-        // Otherwise, set analysis ID to poll for status
-        setAnalysisId(data.analysisId);
-        toast.success('分析已開始，請稍候...');
-      }
+      // v5.1: Backend always returns jobId, no cache response
+      setAnalysisId(data.jobId);
+      toast.success('分析已開始，請稍候...');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.error || '分析失敗，請重試');
+      toast.error(error.response?.data?.message || '分析失敗，請重試');
     },
   });
 
   // Poll for analysis status
-  const { data: status } = useQuery<AnalysisStatus>({
-    queryKey: ['analysisStatus', analysisId],
-    queryFn: () => analysisApi.getAnalysisStatus(analysisId!),
+  const { data: status } = useQuery<JobStatus>({
+    queryKey: ['jobStatus', analysisId],
+    queryFn: () => analysisApi.getJobStatus(analysisId!),
     enabled: !!analysisId && !result,
     refetchInterval: 2000,
     refetchIntervalInBackground: false,
   });
 
-  // Fetch result when analysis is completed
+  // Handle job completion
   useEffect(() => {
-    if (status?.status === 'completed' && analysisId) {
+    if (status?.status === 'completed' && status.data && analysisId) {
       // Stop polling
-      queryClient.invalidateQueries({ queryKey: ['analysisStatus', analysisId] });
+      queryClient.invalidateQueries({ queryKey: ['jobStatus', analysisId] });
       
-      analysisApi.getAnalysisResult(analysisId)
-        .then((data) => {
-          setResult(data);
-          setAnalysisId(null);
-          toast.success('分析完成！');
-        })
-        .catch((error) => {
-          toast.error('無法獲取分析結果');
-        });
+      // Set result directly from status data
+      setResult(status.data);
+      setAnalysisId(null);
+      toast.success('分析完成！');
+    } else if (status?.status === 'completed_with_errors' && status.data && analysisId) {
+      // Handle completion with warnings
+      queryClient.invalidateQueries({ queryKey: ['jobStatus', analysisId] });
+      
+      setResult(status.data);
+      setAnalysisId(null);
+      toast.success('分析完成，但有部分警告');
     } else if (status?.status === 'failed') {
       // Stop polling on failure
-      queryClient.invalidateQueries({ queryKey: ['analysisStatus', analysisId] });
+      queryClient.invalidateQueries({ queryKey: ['jobStatus', analysisId] });
       setAnalysisId(null);
-      toast.error('分析失敗');
+      
+      const errorMessage = status.error?.message || '分析失敗';
+      toast.error(errorMessage);
     }
   }, [status, analysisId, queryClient]);
 
@@ -79,6 +77,6 @@ export const useAnalysis = () => {
     status,
     result,
     currentRequest,
-    isLoading: startAnalysisMutation.isPending || (!!analysisId && status?.status === 'processing'),
+    isLoading: startAnalysisMutation.isPending || (!!analysisId && ['pending', 'processing'].includes(status?.status || '')),
   };
 };

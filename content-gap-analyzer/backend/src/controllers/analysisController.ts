@@ -4,6 +4,8 @@ import { cacheService } from '../services/cacheService';
 import logger from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
 import { AnalysisRequest } from '../types';
+import { costTracker } from '../services/costTracker';
+import { promptService } from '../services/promptService';
 
 class AnalysisController {
   async startAnalysis(req: Request, res: Response, next: NextFunction): Promise<any> {
@@ -13,6 +15,20 @@ class AnalysisController {
       // 驗證請求數據
       if (!analysisRequest.targetKeyword || !analysisRequest.userPageUrl) {
         throw new AppError('Target keyword and user page URL are required', 400, 'VALIDATION_ERROR');
+      }
+
+      // v5.1 新增：檢查每日成本限制
+      const costCheck = costTracker.checkDailyCostLimit(
+        parseFloat(process.env.DAILY_COST_LIMIT || '10.0')
+      );
+      
+      if (costCheck.exceeded) {
+        logger.warn(`Daily cost limit exceeded: $${costCheck.current.toFixed(4)} >= $${costCheck.limit}`);
+        throw new AppError(
+          `Daily API cost limit exceeded ($${costCheck.limit}). Please try again tomorrow or contact support.`,
+          429,
+          'COST_LIMIT_EXCEEDED'
+        );
       }
       
       // 檢查快取（可選擇性跳過）
@@ -131,6 +147,72 @@ class AnalysisController {
       return res.json({
         success: true,
         message: 'Cache cleared successfully'
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+  
+  async getCostStats(_req: Request, res: Response, next: NextFunction): Promise<any> {
+    try {
+      const stats = costTracker.getCostStatistics();
+      const dailyLimit = parseFloat(process.env.DAILY_COST_LIMIT || '10.0');
+      const costCheck = costTracker.checkDailyCostLimit(dailyLimit);
+      
+      return res.json({
+        ...stats,
+        dailyLimit,
+        dailyLimitExceeded: costCheck.exceeded,
+        remainingDailyBudget: Math.max(0, dailyLimit - stats.todaysCost),
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+  
+  async getPromptVersions(_req: Request, res: Response, next: NextFunction): Promise<any> {
+    try {
+      const versions = promptService.getAvailableVersions();
+      const currentVersions = {
+        content_refinement: promptService.getCurrentPrompt('content_refinement')?.version,
+        main_analysis: promptService.getCurrentPrompt('main_analysis')?.version
+      };
+      
+      return res.json({
+        availableVersions: versions,
+        currentVersions,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+  
+  async switchPromptVersion(req: Request, res: Response, next: NextFunction): Promise<any> {
+    try {
+      const { category, promptId } = req.body;
+      
+      if (!category || !promptId) {
+        throw new AppError('Category and promptId are required', 400, 'VALIDATION_ERROR');
+      }
+      
+      if (!['content_refinement', 'main_analysis'].includes(category)) {
+        throw new AppError('Invalid category. Must be content_refinement or main_analysis', 400, 'VALIDATION_ERROR');
+      }
+      
+      const success = promptService.switchPromptVersion(category, promptId);
+      
+      if (!success) {
+        throw new AppError('Failed to switch prompt version', 400, 'PROMPT_SWITCH_ERROR');
+      }
+      
+      logger.info(`Switched ${category} prompt to version: ${promptId}`);
+      
+      return res.json({
+        success: true,
+        message: `Successfully switched ${category} prompt to ${promptId}`,
+        currentVersion: promptService.getCurrentPrompt(category)?.version
       });
     } catch (error) {
       return next(error);

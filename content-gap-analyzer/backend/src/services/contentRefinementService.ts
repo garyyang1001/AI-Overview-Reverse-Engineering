@@ -3,6 +3,8 @@ import { encoding_for_model } from 'tiktoken';
 import logger from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
 import { PageContent } from '../types';
+import { costTracker } from './costTracker';
+import { promptService } from './promptService';
 
 interface RefinedContent {
   url: string;
@@ -36,8 +38,8 @@ class ContentRefinementService {
         apiKey: apiKey.trim()
       });
       
-      // Initialize tokenizer for gpt-3.5-turbo
-      this.tokenizer = encoding_for_model('gpt-3.5-turbo');
+      // Initialize tokenizer for gpt-4o-mini (use gpt-4 tokenizer as closest match)
+      this.tokenizer = encoding_for_model('gpt-4o');
       
       logger.info('Content Refinement Service initialized with OpenAI and tiktoken');
     }
@@ -56,7 +58,7 @@ class ContentRefinementService {
   /**
    * Split content into chunks based on logical boundaries (H2 headings) or token count
    */
-  private splitIntoChunks(content: string, maxChunkTokens: number = 2000): string[] {
+  private splitIntoChunks(content: string, maxChunkTokens: number = 4000): string[] {
     const totalTokens = this.countTokens(content);
     if (totalTokens <= maxChunkTokens) {
       return [content];
@@ -153,28 +155,32 @@ class ContentRefinementService {
   /**
    * Refine a single text chunk using the content refinement prompt
    */
-  private async refineChunk(chunk: string): Promise<{ success: boolean; content: string; error?: string }> {
+  private async refineChunk(chunk: string, jobId?: string): Promise<{ success: boolean; content: string; error?: string }> {
     this.initializeIfNeeded();
     
-    const refinementPrompt = `你是一個SEO內容分析助理。你的任務是閱讀以下提供的文本塊，並僅提取出其中所有包含以下元素的關鍵資訊：
-- 核心論點、主張和結論。
-- 具體的數據、統計數字、年份、或金額。
-- 提到的特定產品名稱、技術術語、法律法規、人物、或組織機構名稱 (實體)。
-- 清晰、可執行的建議、技巧或操作步驟。
+    // v2.0 使用標準化 Prompt 服務
+    const refinementPrompt = promptService.renderPrompt('content_refinement', {
+      content: chunk
+    });
 
-你的輸出必須遵循以下規則：
-1. 以無序列表的格式返回結果（使用'-'符號）。
-2. 忽略所有引言、問候、過渡性語句和主觀性強的形容詞。
-3. 保持中立和客觀，只提煉事實和關鍵點。
+    if (!refinementPrompt) {
+      logger.error('Failed to render content refinement prompt');
+      return {
+        success: false,
+        content: chunk,
+        error: 'Prompt rendering failed'
+      };
+    }
 
-文本內容：
-${chunk}`;
+    // 獲取 Prompt 元數據以配置 API 調用
+    const promptMeta = promptService.getPromptMetadata('content_refinement');
+    const maxResponseTokens = promptMeta?.maxTokens || 1500;
+    const temperature = promptMeta?.temperature || 0.3;
 
-    // Check token count before sending
+    // Check token count before sending - gpt-4o-mini has 128K context window
     const promptTokens = this.countTokens(refinementPrompt);
-    const maxResponseTokens = 1000;
-    const safetyMargin = 500;
-    const maxTotalTokens = 16000; // Conservative limit
+    const safetyMargin = 1000;
+    const maxTotalTokens = 32000; // Conservative limit for gpt-4o-mini (much higher capacity)
     
     if (promptTokens + maxResponseTokens + safetyMargin > maxTotalTokens) {
       logger.warn(`Chunk too large for refinement: ${promptTokens} tokens. Returning original chunk (truncated).`);
@@ -187,13 +193,22 @@ ${chunk}`;
 
     try {
       const response = await this.openai!.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'user', content: refinementPrompt }
         ],
-        temperature: 0.3,
+        temperature,
         max_tokens: maxResponseTokens
       });
+
+      // v5.1 新增：成本追蹤
+      if (response.usage && jobId) {
+        costTracker.recordContentRefinementCost(
+          jobId,
+          response.usage.prompt_tokens,
+          response.usage.completion_tokens
+        );
+      }
       
       const refinedContent = response.choices[0]?.message?.content || '';
       return {
@@ -214,7 +229,7 @@ ${chunk}`;
   /**
    * Refine a single page content using parallel chunk processing
    */
-  async refinePage(pageContent: PageContent): Promise<RefinedContent> {
+  async refinePage(pageContent: PageContent, jobId?: string): Promise<RefinedContent> {
     this.initializeIfNeeded();
     
     const { url, cleanedContent } = pageContent;
@@ -227,7 +242,7 @@ ${chunk}`;
     logger.info(`Split into ${chunks.length} chunks for ${url}`);
     
     // Step 2: Parallel refinement of chunks with error handling
-    const refinementPromises = chunks.map(chunk => this.refineChunk(chunk));
+    const refinementPromises = chunks.map(chunk => this.refineChunk(chunk, jobId));
     const refinementResults = await Promise.all(refinementPromises);
     
     // Count successes and failures
@@ -268,10 +283,10 @@ ${chunk}`;
   /**
    * Refine multiple pages in parallel
    */
-  async refineMultiplePages(pages: PageContent[]): Promise<RefinedContent[]> {
+  async refineMultiplePages(pages: PageContent[], jobId?: string): Promise<RefinedContent[]> {
     logger.info(`Starting parallel refinement of ${pages.length} pages`);
     
-    const refinementPromises = pages.map(page => this.refinePage(page));
+    const refinementPromises = pages.map(page => this.refinePage(page, jobId));
     const results = await Promise.all(refinementPromises);
     
     const totalOriginal = results.reduce((sum, r) => sum + r.originalLength, 0);
@@ -286,6 +301,13 @@ ${chunk}`;
     logger.info(`Refinement stats: ${totalSuccessfulRefinements} successful, ${totalFailedRefinements} failed chunks. ${pagesWithFailures}/${pages.length} pages had failures.`);
     
     return results;
+  }
+
+  /**
+   * 公共方法：精煉單個內容塊（用於測試）
+   */
+  async refineChunkPublic(content: string, jobId?: string): Promise<{ success: boolean; content: string; error?: string }> {
+    return this.refineChunk(content, jobId);
   }
 }
 

@@ -137,7 +137,7 @@ class JobManager {
   /**
    * 獲取任務歷史記錄（用於調試）
    */
-  async getJobHistory(limit: number = 10) {
+  async getJobHistory(_limit: number = 10) {
     try {
       const stats = await this.getQueueStats();
       logger.info(`Queue stats: ${JSON.stringify(stats)}`);

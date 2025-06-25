@@ -57,7 +57,7 @@ class AnalysisService {
       
       const userPage = await playwrightService.scrapePage(request.userPageUrl);
       processingSteps.userPageStatus = 'completed';
-      logger.info(`User page scraped: ${userPage.cleanedContent.length} chars`);
+      logger.info(`User page scraped: ${userPage.cleanedContent?.length || 0} chars`);
       
       this.updateStatus(analysisId, 'processing', 40);
       
@@ -153,12 +153,14 @@ class AnalysisService {
           targetKeyword: request.targetKeyword,
           userPage: {
             ...userPage,
-            cleanedContent: refinedUserContent.refinedSummary
+            cleanedContent: refinedUserContent.refinedSummary,
+            headings: userPage.headings || []
           },
           aiOverview,
           competitorPages: validCompetitorContents.map((refined, index) => ({
             ...validCompetitorPages[index],
-            cleanedContent: refined.refinedSummary
+            cleanedContent: refined.refinedSummary,
+            headings: validCompetitorPages[index].headings || []
           }))
         });
         

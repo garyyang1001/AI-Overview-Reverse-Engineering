@@ -1,5 +1,5 @@
-import { Queue, Job, Worker, QueueEvents } from 'bullmq';
-import redisClient from '../config/redis';
+import { Queue, Job, QueueEvents } from 'bullmq';
+import IORedis from 'ioredis';
 import logger from '../utils/logger';
 import { AnalysisRequest } from '../types';
 
@@ -33,11 +33,20 @@ export interface JobStatus {
 class QueueService {
   private analysisQueue: Queue<AnalysisJobData>;
   private queueEvents: QueueEvents;
+  private redisConnection: IORedis;
 
   constructor() {
+    // 創建專用的 Redis 連接給 BullMQ
+    this.redisConnection = new IORedis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+    });
+
     // 初始化分析任務佇列
     this.analysisQueue = new Queue<AnalysisJobData>('analysis', {
-      connection: redisClient,
+      connection: this.redisConnection,
       defaultJobOptions: {
         removeOnComplete: 10, // 保留最近 10 個完成的任務
         removeOnFail: 50,     // 保留最近 50 個失敗的任務
@@ -49,9 +58,14 @@ class QueueService {
       },
     });
 
-    // 初始化佇列事件監聽
+    // 初始化佇列事件監聽 - BullMQ 需要獨立的連接
     this.queueEvents = new QueueEvents('analysis', {
-      connection: redisClient,
+      connection: new IORedis({
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        maxRetriesPerRequest: null,
+        enableReadyCheck: false,
+      }),
     });
 
     this.setupEventListeners();
@@ -232,6 +246,7 @@ class QueueService {
     try {
       await this.queueEvents.close();
       await this.analysisQueue.close();
+      await this.redisConnection.quit();
       logger.info('Queue service shutdown completed');
     } catch (error) {
       logger.error('Error during queue service shutdown:', error);
@@ -241,12 +256,3 @@ class QueueService {
 
 // 導出單例實例
 export const queueService = new QueueService();
-
-// 優雅關閉處理
-process.on('SIGINT', async () => {
-  await queueService.shutdown();
-});
-
-process.on('SIGTERM', async () => {
-  await queueService.shutdown();
-});

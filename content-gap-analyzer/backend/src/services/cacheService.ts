@@ -1,35 +1,28 @@
-import { createClient } from 'redis';
+import Redis from 'ioredis';
 import logger from '../utils/logger';
 
 class CacheService {
-  private client: any;
+  private client: Redis;
   private isConnected: boolean = false;
   
   constructor() {
-    this.client = createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379'
+    this.client = new Redis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      lazyConnect: true,
+      maxRetriesPerRequest: 3,
+      enableOfflineQueue: false
     });
     
     this.client.on('error', (err: any) => {
-      logger.error('Redis Client Error', err);
+      logger.error('Redis Cache Client Error', err);
       this.isConnected = false;
     });
     
     this.client.on('connect', () => {
-      logger.info('Redis Client Connected');
+      logger.info('Redis Cache Client Connected');
       this.isConnected = true;
     });
-    
-    this.connect();
-  }
-  
-  private async connect() {
-    try {
-      await this.client.connect();
-    } catch (error) {
-      logger.warn('Redis not available, running without cache', error);
-      this.isConnected = false;
-    }
   }
   
   async get(key: string): Promise<string | null> {
@@ -48,7 +41,7 @@ class CacheService {
     
     try {
       if (ttlSeconds) {
-        await this.client.setEx(key, ttlSeconds, value);
+        await this.client.setex(key, ttlSeconds, value);
       } else {
         await this.client.set(key, value);
       }
@@ -73,7 +66,7 @@ class CacheService {
     try {
       const keys = await this.client.keys(pattern);
       if (keys.length > 0) {
-        await this.client.del(keys);
+        await this.client.del(...keys);
         logger.info(`Cleared ${keys.length} cache keys matching pattern: ${pattern}`);
       }
     } catch (error) {

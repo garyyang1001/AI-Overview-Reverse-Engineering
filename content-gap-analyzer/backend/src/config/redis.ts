@@ -10,7 +10,7 @@ const redisConfig = {
   retryDelayOnFailover: 100,
   enableReadyCheck: false,
   lazyConnect: true,
-  maxRetriesPerRequest: 3,
+  maxRetriesPerRequest: null, // BullMQ 要求設為 null
   connectTimeout: 10000,
   commandTimeout: 5000,
 };
@@ -37,19 +37,6 @@ redisClient.on('close', () => {
 
 redisClient.on('reconnecting', () => {
   logger.info('Redis client reconnecting...');
-});
-
-// 優雅關閉處理
-process.on('SIGINT', async () => {
-  logger.info('Gracefully closing Redis connection...');
-  await redisClient.quit();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  logger.info('Gracefully closing Redis connection...');
-  await redisClient.quit();
-  process.exit(0);
 });
 
 export default redisClient;
