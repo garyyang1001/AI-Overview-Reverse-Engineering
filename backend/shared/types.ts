@@ -106,4 +106,9 @@ export interface AnalysisReport {
     pageExperience: string;
     structuredDataRecs: string;
   };
+
+  /**
+   * The final CTA/footer block as requested in the prompt.
+   */
+  reportFooter: string;
 }

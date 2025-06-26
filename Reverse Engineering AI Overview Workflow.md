@@ -90,15 +90,23 @@ d. 建議改進計劃區塊
 
 【使用者提供關鍵字】: [請在此處填寫您要分析的核心關鍵字]
 【使用者提供網址】: [請在此處貼上您要分析的網頁網址]
-【AI Overview 內容】:
-
-[請在此處貼上Google搜尋結果頁第一頁的 AI Overview (SGE) 完整文字內容]
+【AI Overview 內容】: [請在此處貼上Google搜尋結果頁第一頁的 AI Overview (SGE) 完整文字內容]
 
 【被引用網址列表】:
 [請在此處貼上AIO引用的第一個網址]
 [請在此處貼上AIO引用的第二個網址]
-[請在此處貼上AIO引用的第三個網址]
-(依此類推，列出所有被引用的網址)
+...
+
+【已抓取網頁內容】:
+--- START OF CONTENT FOR [使用者提供網址] ---
+[此處貼上 Playwright 抓取到的使用者網址的完整文字內容]
+--- END OF CONTENT FOR [使用者提供網址] ---
+
+--- START OF CONTENT FOR [被引用網址1] ---
+[此處貼上 Playwright 抓取到的被引用網址1的完整文字內容]
+--- END OF CONTENT FOR [被引用網址1] ---
+
+(對於 Playwright 抓取失敗的網址，我們則不在此處提供內容，模型將會依賴其 URL Context 功能進行備用處理)
 
 【終極指令：AI逆向工程與SEO戰略分析報告】
 # 指令開始 #
@@ -109,6 +117,53 @@ d. 建議改進計劃區塊
 
 ## 分析框架與產出要求 (Analysis Framework & Output Requirements) ##
 請嚴格遵循以下框架，產出你的分析報告。報告的開頭必須是「綜合戰略與改善計畫」，因為這對使用者來說是最重要的部分。
+
+### 最終輸出格式 (Final Output Format) ###
+你的最終產出**必須**是一個單一、完整的、可直接解析的 JSON 物件。此 JSON 物件的結構必須嚴格遵守以下 TypeScript interface (`AnalysisReport`) 的定義。不要在 JSON 物件之外添加任何引言、結語或任何其他文字。
+```typescript
+// The TypeScript interface for AnalysisReport
+export interface AnalysisReport {
+  strategyAndPlan: {
+    p1_immediate: ActionItem[];
+    p2_mediumTerm: ActionItem[];
+    p3_longTerm: ActionItem[];
+  };
+  keywordIntent: {
+    coreIntent: string;
+    latentIntents: string[];
+  };
+aiOverviewAnalysis: {
+    summary: string;
+    presentationAnalysis: string;
+  };
+  citedSourceAnalysis: SourceAnalysis[];
+  websiteAssessment: {
+    contentSummary: string;
+    contentGaps: string[];
+    pageExperience: string;
+    structuredDataRecs: string;
+  };
+  reportFooter: string;
+}
+
+export interface ActionItem {
+  recommendation: string;
+  geminiPrompt: string;
+}
+
+export interface SourceAnalysis {
+  url: string;
+  contentSummary: string;
+  contribution: string;
+  eeatAnalysis: {
+    experience: string;
+    expertise: string;
+    authoritativeness: string;
+    trustworthiness: string;
+  };
+}
+```
+
 第一部分：綜合戰略與改善計畫 (Synthesized Strategy & Action Plan)
 (這部分是報告的核心，請將其置於報告最頂部，並提供最詳盡、最可行的洞察與方案)
 綜合接下來所有的分析，我們會把【使用者提供網址】跟「大家在Google上搜尋時想找什麼」、「Google AI整理出來的重點」、「Google AI參考的那些網頁」三者進行比較，看看你的網頁有哪些做得好、哪些可以加強的地方。根據這些比較，我會給你一份有「優先順序」的具體改善計畫。
