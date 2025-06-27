@@ -196,7 +196,7 @@ class AnalysisController {
       return res.json({
         success: true,
         message: `Successfully switched ${category} prompt to ${promptId}`,
-        currentVersion: promptService.getCurrentPrompt(category)?.version
+        currentVersion: (promptService as any).getCurrentPrompt(category)?.version
       });
     } catch (error) {
       return next(error);
