@@ -1,5 +1,5 @@
 import React from 'react';
-import { AIOverviewData } from '../../../shared/types';
+import { AIOverviewData } from '../types';
 
 interface AIOverviewDisplayProps {
   aiOverviewData: AIOverviewData;

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AnalysisRequest, AnalysisResult } from '../../../shared/types';
+import { AnalysisRequest, AnalysisResult, StartAnalysisResponse } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3004/api';
 

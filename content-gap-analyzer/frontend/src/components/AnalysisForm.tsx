@@ -21,9 +21,9 @@ const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading }) => {
 
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="form-group-spacing">
       <div>
-        <label htmlFor="keyword" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="keyword" className="form-label">
           目標關鍵字 *
         </label>
         <input
@@ -31,7 +31,7 @@ const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading }) => {
           type="text"
           value={targetKeyword}
           onChange={(e) => setTargetKeyword(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="form-input"
           placeholder="例如：如何挑選咖啡豆"
           required
           disabled={isLoading}
@@ -39,7 +39,7 @@ const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading }) => {
       </div>
 
       <div>
-        <label htmlFor="userUrl" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="userUrl" className="form-label">
           您的網頁 URL *
         </label>
         <input
@@ -47,39 +47,35 @@ const AnalysisForm: React.FC<AnalysisFormProps> = ({ onSubmit, isLoading }) => {
           type="url"
           value={userPageUrl}
           onChange={(e) => setUserPageUrl(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="form-input"
           placeholder="https://example.com/your-article"
           required
           disabled={isLoading}
         />
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">
-              自動競爭對手分析
-            </h3>
-            <div className="mt-1 text-sm text-blue-700">
-              系統將自動從 Google AI Overview 中提取競爭對手網頁並進行分析，無需手動輸入。
-            </div>
-          </div>
+      <div className="info-box">
+        <svg className="info-box-icon" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+        </svg>
+        <div className="info-box-content">
+          <h3 className="info-box-title">
+            自動競爭對手分析
+          </h3>
+          <p className="info-box-description">
+            系統將自動從 Google AI Overview 中提取競爭對手網頁並進行分析，無需手動輸入。
+          </p>
         </div>
       </div>
 
       <button
         type="submit"
         disabled={isLoading || !targetKeyword || !userPageUrl}
-        className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+        className="primary-button"
       >
         {isLoading ? (
           <>
-            <Loader2 className="animate-spin h-5 w-5 mr-2" />
+            <Loader2 className="loader-icon" />
             分析中...
           </>
         ) : (
