@@ -1,7 +1,7 @@
 import { Queue, Job, QueueEvents } from 'bullmq';
 import IORedis from 'ioredis';
 import logger from '../utils/logger';
-import { AnalysisRequest } from '../types';
+import { AnalysisRequest, AnalysisResult } from '../types';
 
 // 定義任務數據類型
 export interface AnalysisJobData extends AnalysisRequest {

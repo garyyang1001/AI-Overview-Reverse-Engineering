@@ -4,7 +4,7 @@ dotenv.config();
 
 import { serpApiService } from '../services/serpApiService';
 import { contentRefinementService } from '../services/contentRefinementService';
-import { openaiService } from '../services/openaiService';
+import { openaiService } from '../services/geminiService';
 
 async function debugFullWorkflow() {
   console.log('=== 完整工作流程調試 ===\n');

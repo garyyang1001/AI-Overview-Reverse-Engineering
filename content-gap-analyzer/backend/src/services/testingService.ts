@@ -6,7 +6,7 @@
 import logger from '../utils/logger';
 import { promptService } from './promptService';
 import { contentRefinementService } from './contentRefinementService';
-import { openaiService } from './openaiService';
+import { openaiService } from './geminiService';
 import { goldenTestSet, GoldenTestCase } from '../tests/goldenTestSet';
 
 export interface TestResult {

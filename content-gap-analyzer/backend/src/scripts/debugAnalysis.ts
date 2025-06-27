@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { promptService } from '../services/promptService';
-import { openaiService } from '../services/openaiService';
+import { openaiService } from '../services/geminiService';
 
 async function debugAnalysis() {
   console.log('=== 開始調試分析流程 ===\n');

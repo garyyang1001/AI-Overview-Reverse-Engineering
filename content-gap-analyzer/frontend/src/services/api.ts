@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { AnalysisRequest, AnalysisResult, StartAnalysisResponse } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3004/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3002/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -9,12 +9,6 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-export interface StartAnalysisResponse {
-  jobId: string;
-  status: string;
-  message?: string;
-}
 
 export interface JobStatus {
   id: string;

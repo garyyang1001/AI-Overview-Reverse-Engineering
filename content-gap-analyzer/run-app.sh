@@ -1,8 +1,10 @@
 #!/bin/bash
 
-# 載入後端環境變數
+# 載入並檢查後端環境變數（但不導出所有變數）
 if [ -f "backend/.env" ]; then
-  export $(grep -v '^#' backend/.env | xargs)
+  # 只讀取需要檢查的 API Keys
+  GEMINI_API_KEY=$(grep "^GEMINI_API_KEY=" backend/.env | cut -d= -f2-)
+  SERPAPI_KEY=$(grep "^SERPAPI_KEY=" backend/.env | cut -d= -f2-)
   echo "✅ 已載入 backend/.env 環境變數"
 else
   echo "⚠️ 找不到 backend/.env 文件，請確保已配置 API Keys"
@@ -12,9 +14,9 @@ echo "🚀 啟動 AI SEO Content Gap Analyzer"
 echo "=================================="
 
 # 檢查端口是否被占用
-if lsof -Pi :3001 -sTCP:LISTEN -t >/dev/null ; then
-    echo "⚠️  端口 3001 被占用，正在清理..."
-    pkill -f "node.*3001"
+if lsof -Pi :3002 -sTCP:LISTEN -t >/dev/null ; then
+    echo "⚠️  端口 3002 被占用，正在清理..."
+    pkill -f "node.*3002"
     sleep 2
 fi
 
@@ -29,7 +31,7 @@ echo "  GEMINI_API_KEY: $([ -n "$GEMINI_API_KEY" ] && echo "✅ 已設置" || ec
 echo "  SERPAPI_KEY: $([ -n "$SERPAPI_KEY" ] && echo "✅ 已設置" || echo "❌ 未設置")"
 echo ""
 
-echo "🔧 啟動後端服務 (port 3001)..."
+echo "🔧 啟動後端服務 (port 3002)..."
 cd backend
 npm run dev > ../backend.log 2>&1 &
 BACKEND_PID=$!
@@ -40,7 +42,7 @@ echo "   等待後端啟動..."
 sleep 5
 
 # 檢查後端是否成功啟動
-if curl -s http://localhost:3001/api/health > /dev/null; then
+if curl -s http://localhost:3002/api/health > /dev/null; then
     echo "   ✅ 後端啟動成功"
 else
     echo "   ❌ 後端啟動失敗，請檢查 backend.log"
@@ -58,8 +60,8 @@ echo "   前端 PID: $FRONTEND_PID"
 echo ""
 echo "✨ 應用已啟動！"
 echo "   🌐 前端: http://localhost:3000"
-echo "   🔌 後端: http://localhost:3001"
-echo "   📊 健康檢查: http://localhost:3001/api/health"
+echo "   🔌 後端: http://localhost:3002"
+echo "   📊 健康檢查: http://localhost:3002/api/health"
 echo ""
 echo "📝 日誌文件:"
 echo "   後端: backend.log"

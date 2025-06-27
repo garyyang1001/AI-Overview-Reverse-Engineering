@@ -7,7 +7,7 @@ import logger from '../utils/logger';
 import { serpApiService } from '../services/serpApiService';
 import { playwrightService } from '../services/playwrightService';
 import { contentRefinementService } from '../services/contentRefinementService';
-import { openaiService } from '../services/openaiService';
+import { openaiService } from '../services/geminiService';
 
 // 導入錯誤處理系統
 import { errorHandler } from '../services/errorHandler';

@@ -1,7 +1,7 @@
 import logger from '../utils/logger';
 import { serpApiService } from './serpApiService';
 import { playwrightService } from './playwrightService';
-import { openaiService } from './openaiService';
+import { openaiService } from './geminiService';
 import { contentRefinementService } from './contentRefinementService';
 import { AnalysisRequest, AnalysisResult } from '../types';
 
@@ -16,7 +16,7 @@ class AnalysisService {
   private analysisStatus: Map<string, AnalysisStatus> = new Map();
   private analysisResults: Map<string, AnalysisResult> = new Map();
   
-  async performAnalysis(analysisId: string, request: AnalysisRequest): Promise<AnalysisResult> {
+  async performAnalysis(analysisId: string, request: AnalysisRequest, jobId?: string): Promise<AnalysisResult> {
     try {
       // Initialize processing steps
       const processingSteps = {
@@ -295,6 +295,115 @@ class AnalysisService {
     if (score >= 70) return 'good';
     if (score >= 50) return 'fair';
     return 'poor';
+  }
+
+  /**
+   * Generate a basic fallback analysis when AI analysis fails
+   */
+  private generateFallbackAnalysis(targetKeyword: string, _aiOverview: any): Omit<AnalysisResult, 'timestamp' | 'analysisId'> {
+    return {
+      executiveSummary: {
+        mainReasonForExclusion: `無法完成對 "${targetKeyword}" 的完整分析`,
+        topPriorityAction: `建立關於 "${targetKeyword}" 的基礎內容`,
+        confidenceScore: 30
+      },
+      contentGapAnalysis: {
+        missingTopics: [{
+          topic: targetKeyword,
+          description: `缺少關於 "${targetKeyword}" 的詳細內容分析`,
+          importance: 'high',
+          competitorCoverage: 0,
+          implementationComplexity: 'medium'
+        }],
+        missingEntities: [{
+          entity: targetKeyword,
+          type: 'keyword',
+          relevance: 'high',
+          competitorMentions: 0,
+          description: `主要關鍵字 "${targetKeyword}" 需要更深入的內容覆蓋`
+        }],
+        contentDepthGaps: [{
+          area: '核心內容',
+          currentDepth: '淺層',
+          requiredDepth: '深度',
+          competitorAdvantage: '內容分析不足無法確定'
+        }]
+      },
+      eatAnalysis: {
+        experience: {
+          userScore: 3,
+          competitorAverage: 5,
+          gaps: ['缺少實際經驗分享'],
+          opportunities: ['增加真實案例和個人經驗']
+        },
+        expertise: {
+          userScore: 3,
+          competitorAverage: 5,
+          gaps: ['專業深度不足'],
+          opportunities: ['展示專業知識和技能']
+        },
+        authoritativeness: {
+          userScore: 3,
+          competitorAverage: 5,
+          gaps: ['權威性信號不足'],
+          opportunities: ['建立業界認可度']
+        },
+        trustworthiness: {
+          userScore: 3,
+          competitorAverage: 5,
+          gaps: ['信任度指標不明確'],
+          opportunities: ['加強透明度和可信度']
+        }
+      },
+      actionablePlan: {
+        immediate: [{
+          action: 'content-research',
+          title: `研究 "${targetKeyword}" 相關內容`,
+          description: '進行關鍵字相關的深度內容研究和創作',
+          impact: 'high',
+          effort: 'medium',
+          timeline: '1-2 週',
+          implementation: '收集相關資料，撰寫基礎內容',
+          expectedOutcome: '建立基本的內容基礎'
+        }],
+        shortTerm: [{
+          action: 'authority-building',
+          title: '建立專業權威性',
+          description: '增加專家引用和可信來源',
+          impact: 'medium',
+          effort: 'medium',
+          timeline: '1 個月',
+          implementation: '尋找業界專家合作或引用',
+          expectedOutcome: '提升內容可信度'
+        }],
+        longTerm: [{
+          action: 'content-optimization',
+          title: '持續優化內容品質',
+          description: '定期更新和改進內容',
+          impact: 'medium',
+          effort: 'low',
+          timeline: '持續進行',
+          implementation: '建立內容更新流程',
+          expectedOutcome: '維持內容競爭力'
+        }]
+      },
+      reportFooter: '本報告由於分析過程中遇到技術問題，僅提供基礎建議。建議重新執行完整分析以獲得更詳細的洞察。',
+      processingSteps: {
+        serpApiStatus: 'completed',
+        userPageStatus: 'unknown',
+        competitorPagesStatus: 'unknown', 
+        contentRefinementStatus: 'skipped',
+        aiAnalysisStatus: 'failed'
+      },
+      qualityAssessment: {
+        score: 30,
+        level: 'poor',
+        completedSteps: 1,
+        totalSteps: 5,
+        criticalFailures: 1,
+        fallbacksUsed: ['AI分析失敗，使用基礎分析']
+      }
+    };
   }
 }
 

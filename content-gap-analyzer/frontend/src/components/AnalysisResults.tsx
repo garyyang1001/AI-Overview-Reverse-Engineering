@@ -1,9 +1,11 @@
 import React from 'react';
-import { AnalysisResult } from '../../../shared/types';
+import { AnalysisResult } from '../types';
 import { JobStatus } from '../services/api';
 import { Loader2, XCircle, TrendingUp, Users, Award } from 'lucide-react';
 import AIOverviewDisplay from './AIOverviewDisplay';
 import ReferencesList from './ReferencesList';
+import PriorityBlock from './PriorityBlock';
+import ActionItem from './ActionItem';
 
 interface AnalysisResultsProps {
   analysisId?: string;

@@ -280,6 +280,17 @@ export const methodValidator = (allowedMethods: string[]) => {
  */
 export const corsPreflightHandler = (req: Request, res: Response, next: NextFunction) => {
   if (req.method === 'OPTIONS') {
+    const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
+    const origin = req.headers.origin;
+
+    if (origin && allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+    } else {
+      // Fallback for origins not explicitly listed but might be allowed by other means
+      // Or, if no origin header is present, allow all (less secure, but for preflight)
+      res.header('Access-Control-Allow-Origin', '*'); 
+    }
+    
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
     res.header('Access-Control-Max-Age', '86400'); // 24 小時
