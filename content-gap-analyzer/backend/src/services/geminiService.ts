@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import logger from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
-import { AnalysisResult, OpenAIInput, PageContent } from '../types';
+import { OpenAIInput, PageContent, ClaudeAnalysisReport } from '../types';
 // import { costTracker } from './costTracker'; // TODO: Implement cost tracking for Gemini
 import { promptService } from './promptService';
 
@@ -27,7 +27,7 @@ class GeminiService {
     }
   }
   
-  async analyzeContentGap(input: OpenAIInput): Promise<AnalysisReport> {
+  async analyzeContentGap(input: OpenAIInput): Promise<ClaudeAnalysisReport> {
     this.initializeIfNeeded();
     
     // v2.0 使用標準化 Prompt 服務
@@ -122,6 +122,12 @@ class GeminiService {
       essentialsSummary: input.userPage.cleanedContent || ''
     };
 
+    logger.debug('Inspecting userPageData.essentialsSummary in buildAnalysisData:', {
+      summary: userPageData.essentialsSummary,
+      typeOfSummary: typeof userPageData.essentialsSummary,
+      summaryLength: userPageData.essentialsSummary.length,
+    });
+
     const competitorPagesData = input.competitorPages.map((page: PageContent) => ({
       url: page.url,
       essentialsSummary: page.cleanedContent || ''
@@ -155,8 +161,7 @@ class GeminiService {
     return {
       analysisContext: JSON.stringify(analysisContext),
       userPage: JSON.stringify(userPageData),
-      competitorPages: JSON.stringify(competitorPagesData),
-      scrapedContent: input.scrapedContent // Add this line
+      competitorPages: JSON.stringify(competitorPagesData)
     };
   }
   
@@ -172,7 +177,7 @@ export const geminiService = {
     return geminiServiceInstance;
   },
   
-  analyzeContentGap(input: OpenAIInput): Promise<Omit<AnalysisResult, 'timestamp' | 'analysisId'>> {
+  analyzeContentGap(input: OpenAIInput): Promise<ClaudeAnalysisReport> {
     return this.getInstance().analyzeContentGap(input);
   },
 

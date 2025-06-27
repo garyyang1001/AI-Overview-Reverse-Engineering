@@ -1,10 +1,9 @@
 import logger from '../utils/logger';
 import { serpApiService } from './serpApiService';
-import { playwrightService } from './playwrightService';
 import { openaiService } from './geminiService';
 import { contentRefinementService } from './contentRefinementService';
-import { firecrawlService } from './firecrawlService';
-import { AnalysisRequest, AnalysisResult } from '../types';
+import { crawl4aiService, ScrapeResult } from './crawl4aiService';
+import { AnalysisRequest, AnalysisResult, ClaudeAnalysisReport } from '../types';
 
 interface AnalysisStatus {
   analysisId: string;
@@ -17,7 +16,7 @@ class AnalysisService {
   private analysisStatus: Map<string, AnalysisStatus> = new Map();
   private analysisResults: Map<string, AnalysisResult> = new Map();
   
-  async performAnalysis(analysisId: string, request: AnalysisRequest, jobId?: string): Promise<AnalysisResult> {
+  async performAnalysis(analysisId: string, request: AnalysisRequest): Promise<AnalysisResult> {
     try {
       // Initialize processing steps
       const processingSteps = {
@@ -77,63 +76,37 @@ class AnalysisService {
       
       this.updateStatus(analysisId, 'processing', 30);
       
-      // Step 2: Scrape user page with Playwright (Primary)
-      logger.info(`🎭 [PLAYWRIGHT] Scraping user page: ${request.userPageUrl}`);
+      // Step 2: Scrape user page with Crawl4AI
+      logger.info(`🤖 [CRAWL4AI] Scraping user page: ${request.userPageUrl}`);
       processingSteps.userPageStatus = 'processing';
 
-      let userPageResult = await playwrightService.scrapePage(request.userPageUrl);
-      let userPageContentForPrompt = '';
-      let userPageFallbackUsed = false; // New variable to track user page fallback
-      let userPageScrapeSource = 'none'; // 'playwright', 'firecrawl', 'gemini_url_context'
+      let userPageResult: ScrapeResult = await crawl4aiService.scrapePage(request.userPageUrl);
+      let userPageFallbackUsed = false; // This will now indicate if Crawl4AI itself failed
 
       if (userPageResult.success && userPageResult.content) {
         processingSteps.userPageStatus = 'completed';
-        userPageScrapeSource = 'playwright';
-        logger.info(`✅ [PLAYWRIGHT] User page scraped successfully:`, {
+        logger.info(`✅ [CRAWL4AI] User page scraped successfully:`, {
           url: userPageResult.url,
           contentLength: userPageResult.content.length,
           contentPreview: userPageResult.content.substring(0, 150) + '...',
           hasHeadings: userPageResult.headings && userPageResult.headings.length > 0,
           headingsCount: userPageResult.headings?.length || 0,
         });
-        userPageContentForPrompt = `--- START OF CONTENT FOR ${userPageResult.url} ---\n${userPageResult.content}\n--- END OF CONTENT FOR ${userPageResult.url} ---\n\n`;
       } else {
-        logger.error(`❌ [PLAYWRIGHT] User page scraping failed, attempting Firecrawl:`, {
+        processingSteps.userPageStatus = 'failed';
+        logger.error(`❌ [CRAWL4AI] User page scraping failed:`, {
           url: request.userPageUrl,
           error: userPageResult.errorDetails,
           errorType: userPageResult.error,
           success: userPageResult.success,
         });
-
-        // Fallback to Firecrawl
-        const firecrawlUserPageResult = await firecrawlService.scrapePage(request.userPageUrl);
-        if (firecrawlUserPageResult.success && firecrawlUserPageResult.content) {
-          processingSteps.userPageStatus = 'completed';
-          userPageScrapeSource = 'firecrawl';
-          userPageResult = firecrawlUserPageResult; // Use Firecrawl's result
-          logger.info(`✅ [FIRECRAWL] User page scraped successfully (fallback):`, {
-            url: userPageResult.url,
-            contentLength: userPageResult.content.length,
-            contentPreview: userPageResult.content.substring(0, 150) + '...',
-          });
-          userPageContentForPrompt = `--- START OF CONTENT FOR ${userPageResult.url} ---\n${userPageResult.content}\n--- END OF CONTENT FOR ${userPageResult.url} ---\n\n`;
-        } else {
-          processingSteps.userPageStatus = 'failed';
-          userPageScrapeSource = 'gemini_url_context';
-          logger.error(`❌ [FIRECRAWL] User page scraping failed, falling back to Gemini URL Context:`, {
-            url: request.userPageUrl,
-            error: firecrawlUserPageResult.errorDetails,
-            success: firecrawlUserPageResult.success,
-          });
-          logger.warn(`🔄 [GEMINI] FALLBACK: Using URL for Gemini URL Context feature`);
-          userPageContentForPrompt = `--- START OF CONTENT FOR ${userPageResult.url} (Playwright & Firecrawl failed, using URL Context) ---\n${userPageResult.url}\n--- END OF CONTENT FOR ${userPageResult.url} ---\n\n`;
-          userPageFallbackUsed = true;
-        }
+        logger.warn(`🔄 [GEMINI] FALLBACK: Using URL for Gemini URL Context feature as Crawl4AI failed.`);
+        userPageFallbackUsed = true;
       }
 
       this.updateStatus(analysisId, 'processing', 40);
 
-      // Step 3: Extract competitor URLs from search results and batch scrape (Hybrid Approach)
+      // Step 3: Extract competitor URLs from search results and batch scrape with Crawl4AI
       const searchReferences = aiOverview.references || [];
       const additionalCompetitorUrls = request.competitorUrls || [];
 
@@ -144,38 +117,19 @@ class AnalysisService {
       ];
 
       // Remove duplicates and filter out user's own URL
-      const uniqueCompetitorUrls = [...new Set(allCompetitorUrls)]
+      const uniqueCompetitorUrls = Array.from(new Set(allCompetitorUrls))
         .filter(url => url !== request.userPageUrl);
 
       const dataSource = aiOverview.fallbackUsed ? `${aiOverview.source} (fallback)` : 'AI Overview';
       logger.info(`Found ${searchReferences.length} references from ${dataSource}, ${additionalCompetitorUrls.length} additional URLs`);
-      logger.info(`Playwright batch scraping ${uniqueCompetitorUrls.length} competitor pages`);
+      logger.info(`🤖 [CRAWL4AI] Batch scraping ${uniqueCompetitorUrls.length} competitor pages`);
       processingSteps.competitorPagesStatus = 'processing';
 
-      let competitorResults: any[] = [];
-      let competitorContentsForPrompt: string[] = [];
+      let competitorResults: ScrapeResult[] = [];
 
       try {
-        competitorResults = await playwrightService.scrapeMultiplePages(uniqueCompetitorUrls);
-        const successfulPlaywrightScrapes = competitorResults.filter(r => r.success);
-        const failedPlaywrightScrapes = competitorResults.filter(r => !r.success);
-
-        if (failedPlaywrightScrapes.length > 0) {
-          logger.warn(`⚠️ [PLAYWRIGHT] Competitor page scraping partially failed (${failedPlaywrightScrapes.length} failed). Attempting Firecrawl for failed pages.`);
-          const failedUrls = failedPlaywrightScrapes.map(r => r.url);
-          const firecrawlFallbackResults = await firecrawlService.scrapeMultiplePages(failedUrls);
-
-          // Merge Firecrawl results back into competitorResults
-          firecrawlFallbackResults.forEach(firecrawlResult => {
-            const index = competitorResults.findIndex(r => r.url === firecrawlResult.url);
-            if (index !== -1) {
-              competitorResults[index] = firecrawlResult; // Replace Playwright failure with Firecrawl result
-            } else {
-              competitorResults.push(firecrawlResult); // Should not happen if logic is correct
-            }
-          });
-        }
-
+        competitorResults = await crawl4aiService.scrapeMultiplePages(uniqueCompetitorUrls);
+        
         const successfulScrapes = competitorResults.filter(r => r.success);
         const failedScrapes = competitorResults.filter(r => !r.success);
 
@@ -190,24 +144,23 @@ class AnalysisService {
           logger.warn(`All competitor page scraping failed.`);
         }
 
-        competitorResults.forEach(result => {
-          if (result.success && result.content) {
-            competitorContentsForPrompt.push(`--- START OF CONTENT FOR ${result.url} ---\n${result.content}\n--- END OF CONTENT FOR ${result.url} ---\n`);
-          } else {
-            competitorContentsForPrompt.push(`--- START OF CONTENT FOR ${result.url} (Playwright & Firecrawl failed, using URL Context) ---\n${result.url}\n--- END OF CONTENT FOR ${result.url} ---\n`);
-          }
-        });
-
       } catch (error: any) {
         processingSteps.competitorPagesStatus = 'failed';
-        logger.warn(`Competitor page batch scraping failed: ${error.message}. All competitor URLs will be passed for Gemini fallback.`);
-        uniqueCompetitorUrls.forEach(url => {
-          competitorContentsForPrompt.push(`--- START OF CONTENT FOR ${url} (Playwright & Firecrawl failed, using URL Context) ---\n${url}\n--- END OF CONTENT FOR ${url} ---\n`);
-        });
+        logger.warn(`Competitor page batch scraping failed: ${error.message}. URLs will be passed for Gemini fallback.`);
+        // Create empty results for failed competitors so they can be processed by Gemini URL Context
+        competitorResults = uniqueCompetitorUrls.map(url => ({
+          url,
+          success: false,
+          content: null,
+          error: 'Batch scraping failed',
+          errorDetails: error.message,
+          headings: [],
+          title: undefined,
+          metaDescription: undefined
+        }));
       }
 
-      // Construct the full scrapedContent string for the prompt
-      const scrapedContentForPrompt = userPageContentForPrompt + competitorContentsForPrompt.join('\n');
+      // Note: scrapedContent is no longer used in the prompt - data is passed as structured JSON
 
       this.updateStatus(analysisId, 'processing', 60);
 
@@ -216,7 +169,15 @@ class AnalysisService {
       processingSteps.contentRefinementStatus = 'processing';
 
       // Only refine successfully scraped pages. Failed ones will be handled by Gemini URL Context.
-      const pagesToRefine = [userPageResult, ...competitorResults].filter(r => r.success && r.content);
+      const pagesToRefine = [userPageResult, ...competitorResults]
+        .filter(r => r.success && r.content)
+        .map(r => ({
+          url: r.url,
+          title: r.title || '',
+          headings: r.headings || [],
+          cleanedContent: r.content || '', // Ensure cleanedContent is always a string
+          metaDescription: r.metaDescription || ''
+        }));
       logger.info(`Refining ${pagesToRefine.length} successfully scraped pages in parallel`);
 
       let refinedContents: any[] = [];
@@ -224,7 +185,13 @@ class AnalysisService {
 
       if (pagesToRefine.length > 0) {
         try {
-          refinedContents = await contentRefinementService.refineMultiplePages(pagesToRefine.map(p => ({...p, cleanedContent: p.content || ''})), jobId);
+          refinedContents = await contentRefinementService.refineMultiplePages(
+            pagesToRefine.map(p => ({
+              ...p,
+              cleanedContent: p.cleanedContent || '',
+              headings: p.headings || [] // Ensure headings is always string[]
+            })),
+          );
           processingSteps.contentRefinementStatus = 'completed';
           logger.info(`Content refinement completed: ${refinedContents.length} pages processed`);
         } catch (error: any) {
@@ -235,8 +202,8 @@ class AnalysisService {
           // Fallback: use original content for successfully scraped pages that failed refinement
           refinedContents = pagesToRefine.map(page => ({
             url: page.url,
-            originalLength: page.content?.length || 0,
-            refinedSummary: page.content || '',
+            originalLength: page.cleanedContent?.length || 0,
+            refinedSummary: page.cleanedContent || '',
             keyPoints: [],
             refinementSuccess: false,
             refinementStats: { totalChunks: 1, successful: 0, failed: 1 }
@@ -252,7 +219,7 @@ class AnalysisService {
           url: compResult.url,
           cleanedContent: refined?.refinedSummary || compResult.content || '',
           title: compResult.title,
-          headings: compResult.headings,
+          headings: compResult.headings || [], // Ensure headings is always string[]
           metaDescription: compResult.metaDescription
         };
       });
@@ -263,15 +230,21 @@ class AnalysisService {
       logger.info('Performing content gap analysis with OpenAI');
       processingSteps.aiAnalysisStatus = 'processing';
 
-      let analysisResult: AnalysisResult;
+      let analysisResult: ClaudeAnalysisReport;
 
       try {
         // Prepare competitor data - handle cases where some competitors failed
         const validCompetitorPagesForOpenAI = competitorPagesForOpenAI.filter(page => page.cleanedContent);
 
+        logger.debug('Inspecting userPageForOpenAI before AI analysis:', {
+          url: userPageForOpenAI.url,
+          cleanedContent: userPageForOpenAI.cleanedContent,
+          typeOfCleanedContent: typeof userPageForOpenAI.cleanedContent,
+          cleanedContentLength: userPageForOpenAI.cleanedContent?.length,
+        });
         logger.info(`🤖 [GEMINI] Starting AI analysis with data preparation:`, {
           targetKeyword: request.targetKeyword,
-          userPageContent: userPageForOpenAI.cleanedContent ? userPageForOpenAI.cleanedContent.length : 0,
+          userPageContent: userPageForOpenAI.cleanedContent ? userPageForOpenAI.cleanedContent.length : 0, // Corrected
           validCompetitorPages: validCompetitorPagesForOpenAI.length,
           totalAttemptedCompetitors: uniqueCompetitorUrls.length,
           aiOverviewData: {
@@ -279,7 +252,6 @@ class AnalysisService {
             referencesCount: aiOverview.references.length,
             fallbackUsed: aiOverview.fallbackUsed,
           },
-          scrapedContentLength: scrapedContentForPrompt.length,
         });
 
         // Log detailed competitor data        
@@ -296,14 +268,20 @@ class AnalysisService {
         
         analysisResult = await openaiService.analyzeContentGap({
           targetKeyword: request.targetKeyword,
-          userPage: userPageForOpenAI,
+          userPage: {
+            ...userPageForOpenAI,
+            cleanedContent: userPageForOpenAI.cleanedContent || '' // Corrected
+          },
           aiOverview,
           competitorPages: validCompetitorPagesForOpenAI,
-          jobId: analysisId,  // 使用 analysisId 作為 jobId 進行成本追蹤
-          scrapedContent: scrapedContentForPrompt // Pass the constructed scraped content
+          jobId: analysisId  // 使用 analysisId 作為 jobId 進行成本追蹤
         });
 
         logger.info(`✅ [GEMINI] AI analysis completed successfully`);
+        
+        // Validate Claude.md analysis result structure
+        this.validateClaudeAnalysisResult(analysisResult, analysisId);
+        
         processingSteps.aiAnalysisStatus = 'completed';
       } catch (error: any) {
         logger.error(`❌ [GEMINI] CRITICAL: AI analysis failed:`, {
@@ -318,21 +296,82 @@ class AnalysisService {
           userPageAvailable: !!userPageForOpenAI.cleanedContent,
           competitorPagesCount: competitorPagesForOpenAI.filter(page => page.cleanedContent).length,
           aiOverviewAvailable: !!aiOverview,
-          scrapedContentSize: scrapedContentForPrompt.length,
         });
         
         processingSteps.aiAnalysisStatus = 'failed';
 
         logger.warn(`🔄 [GEMINI] FALLBACK: Generating basic analysis due to Gemini failure`);
         // Provide a basic fallback analysis
-        analysisResult = this.generateFallbackAnalysis(request.targetKeyword, aiOverview);
+        analysisResult = this.generateFallbackClaudeAnalysis(request.targetKeyword, aiOverview);
       }
 
       this.updateStatus(analysisId, 'processing', 90);
 
-      // Step 6: Prepare final result with enhanced data
+      // Step 6: Convert ClaudeAnalysisReport to AnalysisResult and prepare final result with enhanced data
+      logger.info('Converting ClaudeAnalysisReport to AnalysisResult', {
+        analysisId,
+        websiteAssessment: !!analysisResult.websiteAssessment,
+        contentGapsLength: analysisResult.websiteAssessment?.contentGaps?.length || 0,
+        strategyAndPlan: !!analysisResult.strategyAndPlan,
+        p1ImmediateLength: analysisResult.strategyAndPlan?.p1_immediate?.length || 0
+      });
+
       const result: AnalysisResult = {
-        ...analysisResult,
+        // Convert ClaudeAnalysisReport to AnalysisResult format
+        executiveSummary: {
+          mainReasonForExclusion: analysisResult.websiteAssessment?.contentGaps?.[0] || 'No specific exclusion reason identified',
+          topPriorityAction: analysisResult.strategyAndPlan?.p1_immediate?.[0]?.recommendation || 'No immediate action identified'
+        },
+        contentGapAnalysis: {
+          missingTopics: (analysisResult.websiteAssessment?.contentGaps || []).map(gap => ({
+            topic: gap,
+            description: gap,
+            importance: 'medium'
+          })),
+          missingEntities: []
+        },
+        eatAnalysis: {
+          experience: { userScore: 3, competitorAverage: 4, gaps: [], opportunities: [] },
+          expertise: { userScore: 3, competitorAverage: 4, gaps: [], opportunities: [] },
+          authoritativeness: { userScore: 3, competitorAverage: 4, gaps: [], opportunities: [] },
+          trustworthiness: { userScore: 3, competitorAverage: 4, gaps: [], opportunities: [] }
+        },
+        actionablePlan: {
+          immediate: analysisResult.strategyAndPlan.p1_immediate.map(item => ({
+            action: item.recommendation,
+            title: item.recommendation.substring(0, 50),
+            description: item.recommendation,
+            impact: 'high' as const,
+            effort: 'medium' as const,
+            timeline: '1-2 weeks',
+            implementation: item.recommendation, // Keep as description/guidance
+            geminiPrompt: item.geminiPrompt, // Preserve the actual Gemini prompt
+            expectedOutcome: 'Improved content relevance'
+          })),
+          shortTerm: analysisResult.strategyAndPlan.p2_mediumTerm.map(item => ({
+            action: item.recommendation,
+            title: item.recommendation.substring(0, 50),
+            description: item.recommendation,
+            impact: 'high' as const,
+            effort: 'high' as const,
+            timeline: '1-3 months',
+            implementation: item.recommendation, // Keep as description/guidance
+            geminiPrompt: item.geminiPrompt, // Preserve the actual Gemini prompt
+            expectedOutcome: 'Enhanced content strategy'
+          })),
+          longTerm: analysisResult.strategyAndPlan.p3_longTerm.map(item => ({
+            action: item.recommendation,
+            title: item.recommendation.substring(0, 50),
+            description: item.recommendation,
+            impact: 'medium' as const,
+            effort: 'high' as const,
+            timeline: '3-6 months',
+            implementation: item.recommendation, // Keep as description/guidance
+            geminiPrompt: item.geminiPrompt, // Preserve the actual Gemini prompt
+            expectedOutcome: 'Long-term authority building'
+          })),
+        },
+        reportFooter: analysisResult.reportFooter,
         analysisId,
         timestamp: new Date().toISOString(),
         aiOverviewData: {
@@ -343,13 +382,36 @@ class AnalysisService {
         processingSteps,
         usedFallbackData: aiOverview.fallbackUsed || userPageFallbackUsed || false,
         refinementSuccessful,
-        analysisQuality: this.assessAnalysisQuality(
-          processingSteps, 
-          competitorResults.filter(r => r.success).length, // Pass actual successful scrapes
-          uniqueCompetitorUrls.length, 
-          refinementSuccessful
-        )
+        qualityAssessment: {
+          score: 0,
+          level: this.assessAnalysisQuality(
+            processingSteps, 
+            competitorResults.filter(r => r.success).length, // Pass actual successful scrapes
+            uniqueCompetitorUrls.length, 
+            refinementSuccessful
+          ),
+          completedSteps: Object.values(processingSteps).filter(status => status === 'completed').length,
+          totalSteps: 5,
+          criticalFailures: Object.values(processingSteps).filter(status => status === 'failed').length,
+          fallbacksUsed: []
+        }
       };
+
+      // Log final result structure for debugging
+      logger.info('Final AnalysisResult created', {
+        analysisId,
+        hasExecutiveSummary: !!result.executiveSummary,
+        mainReasonForExclusion: result.executiveSummary?.mainReasonForExclusion,
+        topPriorityAction: result.executiveSummary?.topPriorityAction
+      });
+      
+      // Calculate score based on quality level
+      switch (result.qualityAssessment!.level) {
+        case 'excellent': result.qualityAssessment!.score = 90; break;
+        case 'good': result.qualityAssessment!.score = 75; break;
+        case 'fair': result.qualityAssessment!.score = 60; break;
+        case 'poor': result.qualityAssessment!.score = 30; break;
+      }
 
       // Store result
       this.analysisResults.set(analysisId, result);
@@ -419,9 +481,9 @@ class AnalysisService {
   }
 
   /**
-   * Generate a basic fallback analysis when AI analysis fails
+   * Generate a basic fallback ClaudeAnalysisReport when AI analysis fails
    */
-  private generateFallbackAnalysis(targetKeyword: string, _aiOverview: any): AnalysisResult {
+  private generateFallbackClaudeAnalysis(targetKeyword: string, _aiOverview: any): ClaudeAnalysisReport {
     return {
       strategyAndPlan: {
         p1_immediate: [
@@ -448,28 +510,67 @@ class AnalysisService {
         pageExperience: '無法評估',
         structuredDataRecs: '無建議'
       },
-      reportFooter: '本報告由於分析過程中遇到技術問題，僅提供基礎建議。建議重新執行完整分析以獲得更詳細的洞察。',
-      analysisId: 'fallback',
-      timestamp: new Date().toISOString(),
-      aiOverviewData: _aiOverview,
-      competitorUrls: [],
-      processingSteps: {
-        serpApiStatus: 'completed',
-        userPageStatus: 'failed',
-        competitorPagesStatus: 'failed',
-        contentRefinementStatus: 'failed',
-        aiAnalysisStatus: 'failed'
-      },
-      qualityAssessment: {
-        score: 30,
-        level: 'poor',
-        completedSteps: 1,
-        totalSteps: 5,
-        criticalFailures: 1,
-        fallbacksUsed: ['AI分析失敗，使用基礎分析']
-      }
+      reportFooter: '本報告由於分析過程中遇到技術問題，僅提供基礎建議。建議重新執行完整分析以獲得更詳細的洞察。'
     };
   }
+
+  /**
+   * Validates that the Claude.md analysis result has the required structure
+   */
+  private validateClaudeAnalysisResult(result: any, analysisId: string): void {
+    const errors: string[] = [];
+
+    // Check required top-level fields
+    if (!result.strategyAndPlan) errors.push('strategyAndPlan is missing');
+    if (!result.keywordIntent) errors.push('keywordIntent is missing');
+    if (!result.aiOverviewAnalysis) errors.push('aiOverviewAnalysis is missing');
+    if (!result.websiteAssessment) errors.push('websiteAssessment is missing');
+    if (!result.reportFooter) errors.push('reportFooter is missing');
+
+    // Check strategy and plan structure
+    if (result.strategyAndPlan) {
+      if (!Array.isArray(result.strategyAndPlan.p1_immediate)) {
+        errors.push('strategyAndPlan.p1_immediate must be an array');
+      } else {
+        result.strategyAndPlan.p1_immediate.forEach((item: any, index: number) => {
+          if (!item.recommendation) errors.push(`p1_immediate[${index}].recommendation is missing`);
+          if (!item.geminiPrompt) errors.push(`p1_immediate[${index}].geminiPrompt is missing`);
+        });
+      }
+      
+      if (!Array.isArray(result.strategyAndPlan.p2_mediumTerm)) {
+        errors.push('strategyAndPlan.p2_mediumTerm must be an array');
+      }
+      
+      if (!Array.isArray(result.strategyAndPlan.p3_longTerm)) {
+        errors.push('strategyAndPlan.p3_longTerm must be an array');
+      }
+    }
+
+    // Check website assessment
+    if (result.websiteAssessment && !Array.isArray(result.websiteAssessment.contentGaps)) {
+      errors.push('websiteAssessment.contentGaps must be an array');
+    }
+
+    // Log validation results
+    if (errors.length > 0) {
+      logger.warn('Claude.md analysis result validation failed', {
+        analysisId,
+        errors,
+        hasStrategyAndPlan: !!result.strategyAndPlan,
+        hasWebsiteAssessment: !!result.websiteAssessment
+      });
+    } else {
+      logger.info('Claude.md analysis result validation passed', {
+        analysisId,
+        p1Count: result.strategyAndPlan?.p1_immediate?.length || 0,
+        p2Count: result.strategyAndPlan?.p2_mediumTerm?.length || 0,
+        p3Count: result.strategyAndPlan?.p3_longTerm?.length || 0,
+        contentGapsCount: result.websiteAssessment?.contentGaps?.length || 0
+      });
+    }
+  }
+
 }
 
 export const analysisService = new AnalysisService();

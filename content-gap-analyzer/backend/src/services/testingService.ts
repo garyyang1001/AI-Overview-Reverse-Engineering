@@ -185,7 +185,9 @@ class TestingService {
     }
     
     // 模擬實際調用流程
-    return await contentRefinementService.refineChunkPublic(testCase.input.content, `test_${testCase.id}`);
+    const result = await contentRefinementService.refineChunkPublic(testCase.input.content);
+    // Return just the content string for evaluation
+    return result.success ? result.content : '';
   }
 
   /**
@@ -265,22 +267,53 @@ class TestingService {
         } else if (requiredElement === 'actionable recommendations' && 
                   (outputLower.includes('optimize') || outputLower.includes('implement') || outputLower.includes('create'))) {
           requiredElementsFound++;
+        } else if (requiredElement === 'specific metrics and formulas' && 
+                  (outputLower.includes('cac') || outputLower.includes('clv') || outputLower.includes('mrr') || outputLower.includes('公式'))) {
+          requiredElementsFound++;
+        } else if (requiredElement === 'company names and examples' && 
+                  (outputLower.includes('salesforce') || outputLower.includes('hubspot') || outputLower.includes('intercom'))) {
+          requiredElementsFound++;
+        } else if (requiredElement === 'numerical benchmarks' && 
+                  /\$\d+/.test(outputText)) {
+          requiredElementsFound++;
+        } else if (requiredElement === 'industry data' && 
+                  (outputLower.includes('b2b') || outputLower.includes('b2c') || outputLower.includes('enterprise') || outputLower.includes('基準'))) {
+          requiredElementsFound++;
         }
       } else {
-        // 對於主分析，檢查 JSON 結構
+        // 對於主分析，檢查 JSON 結構 (Claude.md format)
         if (requiredElement === 'executiveSummary with confidence score' && 
-            output.executiveSummary && typeof output.executiveSummary.confidenceScore === 'number') {
+            output.strategyAndPlan && output.strategyAndPlan.p1_immediate && output.strategyAndPlan.p1_immediate.length > 0) {
           requiredElementsFound++;
         } else if (requiredElement === 'eatAnalysis with scores' && 
-                  output.eatAnalysis && Object.keys(output.eatAnalysis).length > 0) {
+                  output.citedSourceAnalysis && output.citedSourceAnalysis.length > 0 && 
+                  output.citedSourceAnalysis[0].eeatAnalysis) {
           requiredElementsFound++;
         } else if (requiredElement === 'contentGapAnalysis with specific gaps' && 
-                  output.contentGapAnalysis && output.contentGapAnalysis.missingTopics) {
+                  output.websiteAssessment && output.websiteAssessment.contentGaps && output.websiteAssessment.contentGaps.length > 0) {
           requiredElementsFound++;
         } else if (requiredElement === 'actionablePlan with timeline' && 
-                  output.actionablePlan && Array.isArray(output.actionablePlan)) {
+                  output.strategyAndPlan && (output.strategyAndPlan.p1_immediate || output.strategyAndPlan.p2_mediumTerm || output.strategyAndPlan.p3_longTerm)) {
           requiredElementsFound++;
-        } else if (requiredElement === 'competitorInsights' && output.competitorInsights) {
+        } else if (requiredElement === 'competitorInsights' && output.citedSourceAnalysis && output.citedSourceAnalysis.length > 0) {
+          requiredElementsFound++;
+        } else if (requiredElement === 'detailed E-E-A-T analysis' && 
+                  output.citedSourceAnalysis && output.citedSourceAnalysis.length > 0 && 
+                  output.citedSourceAnalysis[0].eeatAnalysis && 
+                  Object.keys(output.citedSourceAnalysis[0].eeatAnalysis).length === 4) {
+          requiredElementsFound++;
+        } else if (requiredElement === 'specific competitor advantages' && 
+                  output.citedSourceAnalysis && output.citedSourceAnalysis.some((source: any) => 
+                    source.contribution && source.contribution.length > 50)) {
+          requiredElementsFound++;
+        } else if (requiredElement === 'actionable improvement plan' && 
+                  output.strategyAndPlan && 
+                  (output.strategyAndPlan.p1_immediate?.length > 0 || 
+                   output.strategyAndPlan.p2_mediumTerm?.length > 0 || 
+                   output.strategyAndPlan.p3_longTerm?.length > 0)) {
+          requiredElementsFound++;
+        } else if (requiredElement === 'success metrics definition' && 
+                  output.reportFooter && output.reportFooter.length > 50) {
           requiredElementsFound++;
         }
       }

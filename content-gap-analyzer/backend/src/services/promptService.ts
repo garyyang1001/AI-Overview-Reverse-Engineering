@@ -82,12 +82,18 @@ export class PromptService {
 # [USER] 情境與任務
 你將接收一個包含預處理過的關鍵內容摘要的 JSON 物件。你的分析必須完全基於這些提供的摘要。數據包括：
 
-1. `analysisContext`: 目標關鍵字和確切的 Google AI Overview 文本
-2. `userPage`: 使用者頁面的 URL 和精煉摘要  
-3. `competitorPages`: 競爭對手頁面陣列（AI Overview 中引用的）及其精煉摘要
+1. \`analysisContext\`: 目標關鍵字和確切的 Google AI Overview 文本
+2. \`userPage\`: 使用者頁面的 URL 和精煉摘要  
+3. \`competitorPages\`: 競爭對手頁面陣列（AI Overview 中引用的）及其精煉摘要
 
-【已抓取網頁內容】:
-{{scrapedContent}}
+【分析背景資料】:
+{{analysisContext}}
+
+【使用者網頁資料】:
+{{userPage}}
+
+【競爭對手網頁資料】:
+{{competitorPages}}
 
 你的任務是執行全面的差距分析，並生成策略改進計畫。
 
@@ -116,7 +122,6 @@ export class PromptService {
 # [輸出格式]
 你的整個回應必須是單一、有效的 JSON 物件，不包含任何外圍文字或 markdown。嚴格遵循此結構：
 
-```json
 {
   "strategyAndPlan": {
     "p1_immediate": [
@@ -167,52 +172,14 @@ export class PromptService {
   },
   "reportFooter": "string"
 }
-```
 
 # [重要指導原則]
 - 分析必須完全基於提供的精煉摘要，不得使用外部知識
 - 每項建議都必須具體且可執行
 - 分數應反映基於內容比較的實際差距
 - 專注於影響 AI Overview 選擇的因子
-- 優先考慮影響力與工作量比值最高的改變
-- 所有輸出內容必須使用繁體中文
-    "coreIntent": "string",
-    "latentIntents": ["string"]
-  },
-  "aiOverviewAnalysis": {
-    "summary": "string",
-    "presentationAnalysis": "string"
-  },
-  "citedSourceAnalysis": [
-    {
-      "url": "string",
-      "contentSummary": "string",
-      "contribution": "string",
-      "eeatAnalysis": {
-        "experience": "string",
-        "expertise": "string",
-        "authoritativeness": "string",
-        "trustworthiness": "string"
-      }
-    }
-  ],
-  "websiteAssessment": {
-    "contentSummary": "string",
-    "contentGaps": ["string"],
-    "pageExperience": "string",
-    "structuredDataRecs": "string"
-  },
-  "reportFooter": "string"
-}
-```
-
-# [重要指導原則]
-- 分析必須完全基於提供的精煉摘要，不得使用外部知識
-- 每項建議都必須具體且可執行
-- 分數應反映基於內容比較的實際差距
-- 專注於影響 AI Overview 選擇的因子
-- 優先考慮影響力與工作量比值最高的改變
-- 所有輸出內容必須使用繁體中文,
+- 優先考慮影響力與工作量比值最高的回報
+- 所有輸出內容必須使用繁體中文`, 
       variables: ['analysisContext', 'userPage', 'competitorPages'],
       metadata: {
         language: 'zh-TW',

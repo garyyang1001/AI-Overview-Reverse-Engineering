@@ -185,7 +185,6 @@ export interface OpenAIInput {
   userPage: PageContent;
   competitorPages: PageContent[];
   jobId?: string;
-  scrapedContent?: string;
 }
 
 // =================================================================
