@@ -216,7 +216,7 @@ class ContentRefinementService {
         content: refinedContent
       };
     } catch (error: any) {
-      logger.warn(`Failed to refine chunk (${promptTokens} tokens):`, error.message);
+      logger.warn(`Failed to refine chunk (${promptTokens} tokens):`, error);
       // Return original chunk as fallback instead of throwing
       return {
         success: false,

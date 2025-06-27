@@ -162,6 +162,8 @@ export interface AnalysisResult {
     criticalFailures: number;
     fallbacksUsed: string[];
   };
+  usedFallbackData?: boolean; // Whether fallback data sources were used
+  refinementSuccessful?: boolean; // Whether content refinement was successful
   jobCompletion?: any; // This will be refined later if needed
   errors?: string[]; // This will be refined later if needed
   warnings?: Array<{ // This will be refined later if needed

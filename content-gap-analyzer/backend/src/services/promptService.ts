@@ -82,9 +82,9 @@ export class PromptService {
 # [USER] 情境與任務
 你將接收一個包含預處理過的關鍵內容摘要的 JSON 物件。你的分析必須完全基於這些提供的摘要。數據包括：
 
-1. \`analysisContext\`: 目標關鍵字和確切的 Google AI Overview 文本
-2. \`userPage\`: 使用者頁面的 URL 和精煉摘要  
-3. \`competitorPages\`: 競爭對手頁面陣列（AI Overview 中引用的）及其精煉摘要
+1. `analysisContext`: 目標關鍵字和確切的 Google AI Overview 文本
+2. `userPage`: 使用者頁面的 URL 和精煉摘要  
+3. `competitorPages`: 競爭對手頁面陣列（AI Overview 中引用的）及其精煉摘要
 
 【已抓取網頁內容】:
 {{scrapedContent}}
@@ -116,167 +116,58 @@ export class PromptService {
 # [輸出格式]
 你的整個回應必須是單一、有效的 JSON 物件，不包含任何外圍文字或 markdown。嚴格遵循此結構：
 
-\`\`\`json
+```json
 {
-  "executiveSummary": {
-    "mainReasonForExclusion": "用一句話簡潔說明用戶頁面未被收錄到 AI Overview 的主要原因",
-    "topPriorityAction": "用戶應該採取的最具影響力的單一改進行動",
-    "confidenceScore": 85
+  "strategyAndPlan": {
+    "p1_immediate": [
+      {
+        "recommendation": "string",
+        "geminiPrompt": "string"
+      }
+    ],
+    "p2_mediumTerm": [
+      {
+        "recommendation": "string",
+        "geminiPrompt": "string"
+      }
+    ],
+    "p3_longTerm": [
+      {
+        "recommendation": "string",
+        "geminiPrompt": "string"
+      }
+    ]
   },
-  "eatAnalysis": {
-    "experience": {
-      "userScore": 65,
-      "competitorAverage": 82,
-      "gaps": ["缺乏個人案例研究", "缺少實作範例"],
-      "opportunities": ["增加真實世界實施範例", "納入用戶見證"]
-    },
-    "expertise": {
-      "userScore": 70,
-      "competitorAverage": 88,
-      "gaps": ["技術深度不足", "缺少進階概念"],
-      "opportunities": ["增加技術深度分析", "納入專家引用"]
-    },
-    "authoritativeness": {
-      "userScore": 60,
-      "competitorAverage": 85,
-      "gaps": ["未提及專家憑證", "缺乏行業參考資料"],
-      "opportunities": ["新增作者專業背景介紹", "引用行業標準"]
-    },
-    "trustworthiness": {
-      "userScore": 75,
-      "competitorAverage": 83,
-      "gaps": ["缺少數據來源", "無發布日期"],
-      "opportunities": ["添加可信來源", "納入最新統計數據"]
+  "keywordIntent": {
+    "coreIntent": "string",
+    "latentIntents": ["string"]
+  },
+  "aiOverviewAnalysis": {
+    "summary": "string",
+    "presentationAnalysis": "string"
+  },
+  "citedSourceAnalysis": [
+    {
+      "url": "string",
+      "contentSummary": "string",
+      "contribution": "string",
+      "eeatAnalysis": {
+        "experience": "string",
+        "expertise": "string",
+        "authoritativeness": "string",
+        "trustworthiness": "string"
+      }
     }
+  ],
+  "websiteAssessment": {
+    "contentSummary": "string",
+    "contentGaps": ["string"],
+    "pageExperience": "string",
+    "structuredDataRecs": "string"
   },
-  "contentGapAnalysis": {
-    "missingTopics": [
-      {
-        "topic": "具體缺失的主題或子主題",
-        "importance": "high",
-        "competitorCoverage": 4,
-        "implementationComplexity": "medium",
-        "description": "為何此主題關鍵，以及競爭對手如何處理"
-      }
-    ],
-    "missingEntities": [
-      {
-        "entity": "重要人物、產品或組織",
-        "type": "person|product|organization|concept",
-        "relevance": "high",
-        "competitorMentions": 3,
-        "description": "為何提及此實體能增加權威性"
-      }
-    ],
-    "contentDepthGaps": [
-      {
-        "area": "缺乏深度的主題領域",
-        "currentDepth": "surface",
-        "requiredDepth": "comprehensive",
-        "competitorAdvantage": "競爭對手提供詳細說明和範例"
-      }
-    ]
-  },
-  "actionablePlan": {
-    "immediate": [
-      {
-        "action": "新增專家見解區塊",
-        "title": "新增專家見解區塊",
-        "description": "建立專門區域展示專家意見和憑證以提升權威性",
-        "impact": "high",
-        "effort": "medium",
-        "timeline": "1-2 週",
-        "implementation": "1. 識別 3-5 位相關領域專家 2. 進行訪談或收集公開聲明 3. 在文章頂部或側邊欄新增專家引言區塊 4. 包含專家照片、職稱和簡介",
-        "expectedOutcome": "預期提升權威性分數 15-25 分，增加 Google 對內容可信度的評估",
-        "specificSteps": [
-          "研究並列出 5-10 位行業權威專家",
-          "撰寫專業的訪談邀請郵件",
-          "準備 3-5 個核心問題進行訪談",
-          "設計專家引言的視覺布局",
-          "在文章中戰略性地放置專家觀點"
-        ],
-        "measurableGoals": [
-          "至少獲得 2 位專家的正式引言",
-          "專家區塊的用戶停留時間增加 30%",
-          "社交媒體分享率提升 20%"
-        ]
-      }
-    ],
-    "shortTerm": [
-      {
-        "action": "強化數據支持",
-        "title": "強化數據支持",
-        "description": "新增最新統計數據和研究發現",
-        "impact": "medium",
-        "effort": "low",
-        "timeline": "3-5 天",
-        "implementation": "1. 搜尋 2024 年相關行業報告 2. 從政府機構獲取官方統計 3. 引用學術研究和白皮書 4. 建立數據來源清單並定期更新",
-        "expectedOutcome": "提升內容的事實準確性和時效性，改善 E-E-A-T 中的信任度評分",
-        "specificSteps": [
-          "建立可信數據來源清單（政府、學術機構、行業組織）",
-          "每月檢查並更新統計數據",
-          "為每個數據點添加來源連結",
-          "創建數據視覺化圖表（如需要）",
-          "在文章末尾添加「數據來源」區塊"
-        ],
-        "measurableGoals": [
-          "至少新增 5-8 個 2024 年的統計數據",
-          "所有數據都有明確的來源標註",
-          "用戶對內容的信任度評分提升 15%"
-        ]
-      }
-    ],
-    "longTerm": [
-      {
-        "action": "開發全面案例研究",
-        "title": "建立全面案例研究",
-        "description": "發展詳細的真實世界實施範例",
-        "impact": "high",
-        "effort": "high",
-        "timeline": "4-6 週",
-        "implementation": "1. 識別 2-3 個成功案例 2. 進行深度訪談和數據收集 3. 撰寫詳細的案例分析 4. 包含前後對比數據和視覺元素 5. 獲得案例主體的使用許可",
-        "expectedOutcome": "顯著改善經驗和專業性信號，建立內容的實用性和可信度",
-        "specificSteps": [
-          "制定案例研究的標準化模板",
-          "聯繫並獲得客戶/合作夥伴參與同意",
-          "收集量化數據（ROI、成效指標等）",
-          "進行結構化訪談記錄實施過程",
-          "創建案例研究的多媒體展示",
-          "建立案例研究的更新和維護流程"
-        ],
-        "measurableGoals": [
-          "完成至少 2 個詳細案例研究",
-          "每個案例包含至少 5 個量化指標",
-          "案例研究頁面的轉換率達到 8-12%",
-          "獲得案例主體的正面推薦或證言"
-        ]
-      }
-    ]
-  },
-  "competitorInsights": {
-    "topPerformingCompetitor": {
-      "url": "competitor-url.com",
-      "strengths": ["全面的技術覆蓋", "強力的專家憑證"],
-      "keyDifferentiators": ["行業合作夥伴關係", "原創研究數據"]
-    },
-    "commonPatterns": [
-      "所有頂級競爭對手都包含作者憑證",
-      "大多數都有最新行業統計數據",
-      "多數提供實用實施指南"
-    ]
-  },
-  "successMetrics": {
-    "primaryKPI": "AI Overview 收錄機率",
-    "trackingRecommendations": [
-      "監控關鍵字排名改善",
-      "追蹤精選摘要出現次數",
-      "測量目標頁面的自然流量成長"
-    ],
-    "timeframe": "3-6 個月內獲得顯著改善"
-  },
-  "reportFooter": string
+  "reportFooter": "string"
 }
-\`\`\`
+```
 
 # [重要指導原則]
 - 分析必須完全基於提供的精煉摘要，不得使用外部知識
@@ -284,7 +175,44 @@ export class PromptService {
 - 分數應反映基於內容比較的實際差距
 - 專注於影響 AI Overview 選擇的因子
 - 優先考慮影響力與工作量比值最高的改變
-- 所有輸出內容必須使用繁體中文`,
+- 所有輸出內容必須使用繁體中文
+    "coreIntent": "string",
+    "latentIntents": ["string"]
+  },
+  "aiOverviewAnalysis": {
+    "summary": "string",
+    "presentationAnalysis": "string"
+  },
+  "citedSourceAnalysis": [
+    {
+      "url": "string",
+      "contentSummary": "string",
+      "contribution": "string",
+      "eeatAnalysis": {
+        "experience": "string",
+        "expertise": "string",
+        "authoritativeness": "string",
+        "trustworthiness": "string"
+      }
+    }
+  ],
+  "websiteAssessment": {
+    "contentSummary": "string",
+    "contentGaps": ["string"],
+    "pageExperience": "string",
+    "structuredDataRecs": "string"
+  },
+  "reportFooter": "string"
+}
+```
+
+# [重要指導原則]
+- 分析必須完全基於提供的精煉摘要，不得使用外部知識
+- 每項建議都必須具體且可執行
+- 分數應反映基於內容比較的實際差距
+- 專注於影響 AI Overview 選擇的因子
+- 優先考慮影響力與工作量比值最高的改變
+- 所有輸出內容必須使用繁體中文,
       variables: ['analysisContext', 'userPage', 'competitorPages'],
       metadata: {
         language: 'zh-TW',

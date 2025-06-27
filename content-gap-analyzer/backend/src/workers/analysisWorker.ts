@@ -153,23 +153,42 @@ class AnalysisWorker {
             'SCRAPING_FAILED',
             `Failed to scrape user's page: ${userPageResult.error}`,
             [playwrightError],
-            false
+            true  // Changed to true - allow continuation with fallback
           );
           stepErrors.push(stepError);
-          throw new Error(`Failed to scrape user's page: ${userPageResult.error} - ${userPageResult.errorDetails}`);
+          
+          logger.warn(`🔄 [WORKER] User page scraping failed, will use Gemini URL Context fallback:`, {
+            url: userPageUrl,
+            error: userPageResult.error,
+            details: userPageResult.errorDetails
+          });
+          
+          // Create fallback user page object with URL only (for Gemini URL Context)
+          userPage = {
+            url: userPageResult.url,
+            title: '',
+            headings: [],
+            cleanedContent: '', // Empty content signals fallback needed
+            metaDescription: '',
+            scrapeFailure: {
+              error: userPageResult.error,
+              details: userPageResult.errorDetails,
+              needsFallback: true
+            }
+          };
+        } else {
+          // 轉換為舊格式以兼容後續處理
+          userPage = {
+            url: userPageResult.url,
+            title: userPageResult.title || '',
+            headings: userPageResult.headings || [],
+            cleanedContent: userPageResult.content || '',
+            metaDescription: userPageResult.metaDescription || ''
+          };
+          
+          processingSteps.userPageStatus = 'completed';
+          completedSteps.push('user_scraping');
         }
-        
-        // 轉換為舊格式以兼容後續處理
-        userPage = {
-          url: userPageResult.url,
-          title: userPageResult.title || '',
-          headings: userPageResult.headings || [],
-          cleanedContent: userPageResult.content || '',
-          metaDescription: userPageResult.metaDescription || ''
-        };
-        
-        processingSteps.userPageStatus = 'completed';
-        completedSteps.push('user_scraping');
         
       } catch (error: any) {
         processingSteps.userPageStatus = 'failed';
@@ -179,11 +198,29 @@ class AnalysisWorker {
             'SCRAPING_FAILED',
             error.message,
             [],
-            false
+            true  // Changed to true - allow continuation with fallback
           );
           stepErrors.push(stepError);
         }
-        throw error;
+        
+        logger.warn(`🔄 [WORKER] Exception during user page scraping, will use Gemini URL Context fallback:`, {
+          url: userPageUrl,
+          error: error.message
+        });
+        
+        // Create fallback user page object for unexpected errors
+        userPage = {
+          url: userPageUrl,
+          title: '',
+          headings: [],
+          cleanedContent: '', // Empty content signals fallback needed
+          metaDescription: '',
+          scrapeFailure: {
+            error: 'EXCEPTION',
+            details: error.message,
+            needsFallback: true
+          }
+        };
       }
       
       await job.updateProgress(40);

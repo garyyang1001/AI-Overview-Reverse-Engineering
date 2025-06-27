@@ -3,6 +3,7 @@ import { serpApiService } from './serpApiService';
 import { playwrightService } from './playwrightService';
 import { openaiService } from './geminiService';
 import { contentRefinementService } from './contentRefinementService';
+import { firecrawlService } from './firecrawlService';
 import { AnalysisRequest, AnalysisResult } from '../types';
 
 interface AnalysisStatus {
@@ -31,41 +32,103 @@ class AnalysisService {
       this.updateStatus(analysisId, 'processing', 10);
       
       // Step 1: Get AI Overview from SerpAPI
-      logger.info(`Fetching AI Overview for: ${request.targetKeyword}`);
+      logger.info(`🔍 [SERPAPI] Fetching AI Overview for keyword: "${request.targetKeyword}"`);
       processingSteps.serpApiStatus = 'processing';
       
       const aiOverview = await serpApiService.getAIOverview(request.targetKeyword);
       
       if (!aiOverview) {
         processingSteps.serpApiStatus = 'failed';
+        logger.error(`❌ [SERPAPI] CRITICAL: No search data returned for keyword: "${request.targetKeyword}"`);
+        logger.error(`🚨 [SERPAPI] This could indicate:`);
+        logger.error(`   - SERPAPI quota exceeded`);
+        logger.error(`   - Network connectivity issues`);
+        logger.error(`   - Invalid keyword format`);
+        logger.error(`   - Regional restrictions for Taiwan (tw/zh-TW)`);
         throw new Error('No search data available for the given keyword');
       }
       
       processingSteps.serpApiStatus = 'completed';
       
+      // Enhanced SERPAPI data validation and logging
+      logger.info(`✅ [SERPAPI] Data retrieved successfully for: "${request.targetKeyword}"`);
+      logger.info(`📊 [SERPAPI] Data quality metrics:`, {
+        summaryLength: aiOverview.summaryText.length,
+        referencesCount: aiOverview.references.length,
+        fallbackUsed: aiOverview.fallbackUsed,
+        source: aiOverview.source,
+        summaryPreview: aiOverview.summaryText.substring(0, 100) + '...',
+        referencesPreview: aiOverview.references.slice(0, 3),
+      });
+      
+      // Data quality warnings
+      if (aiOverview.summaryText.length < 100) {
+        logger.warn(`⚠️ [SERPAPI] WARNING: AI Overview text is unusually short (${aiOverview.summaryText.length} chars)`);
+      }
+      
+      if (aiOverview.references.length === 0) {
+        logger.warn(`⚠️ [SERPAPI] WARNING: No references found in AI Overview`);
+      }
+      
       if (aiOverview.fallbackUsed) {
-        logger.info(`Fallback data retrieved (${aiOverview.source}): ${aiOverview.summaryText.length} chars, ${aiOverview.references.length} references`);
-      } else {
-        logger.info(`AI Overview retrieved: ${aiOverview.summaryText.length} chars, ${aiOverview.references.length} references`);
+        logger.warn(`🔄 [SERPAPI] FALLBACK: Using ${aiOverview.source} data instead of native AI Overview`);
+        logger.warn(`   This may result in lower quality analysis results`);
       }
       
       this.updateStatus(analysisId, 'processing', 30);
       
       // Step 2: Scrape user page with Playwright (Primary)
-      logger.info(`Playwright scraping user page: ${request.userPageUrl}`);
+      logger.info(`🎭 [PLAYWRIGHT] Scraping user page: ${request.userPageUrl}`);
       processingSteps.userPageStatus = 'processing';
 
       let userPageResult = await playwrightService.scrapePage(request.userPageUrl);
       let userPageContentForPrompt = '';
+      let userPageFallbackUsed = false; // New variable to track user page fallback
+      let userPageScrapeSource = 'none'; // 'playwright', 'firecrawl', 'gemini_url_context'
 
       if (userPageResult.success && userPageResult.content) {
         processingSteps.userPageStatus = 'completed';
-        logger.info(`User page scraped successfully: ${userPageResult.content.length} chars`);
+        userPageScrapeSource = 'playwright';
+        logger.info(`✅ [PLAYWRIGHT] User page scraped successfully:`, {
+          url: userPageResult.url,
+          contentLength: userPageResult.content.length,
+          contentPreview: userPageResult.content.substring(0, 150) + '...',
+          hasHeadings: userPageResult.headings && userPageResult.headings.length > 0,
+          headingsCount: userPageResult.headings?.length || 0,
+        });
         userPageContentForPrompt = `--- START OF CONTENT FOR ${userPageResult.url} ---\n${userPageResult.content}\n--- END OF CONTENT FOR ${userPageResult.url} ---\n\n`;
       } else {
-        processingSteps.userPageStatus = 'failed';
-        logger.warn(`User page scraping failed: ${userPageResult.errorDetails}. Using URL for Gemini fallback.`);
-        userPageContentForPrompt = `--- START OF CONTENT FOR ${userPageResult.url} (Playwright failed, using URL Context) ---\n${userPageResult.url}\n--- END OF CONTENT FOR ${userPageResult.url} ---\n\n`;
+        logger.error(`❌ [PLAYWRIGHT] User page scraping failed, attempting Firecrawl:`, {
+          url: request.userPageUrl,
+          error: userPageResult.errorDetails,
+          errorType: userPageResult.error,
+          success: userPageResult.success,
+        });
+
+        // Fallback to Firecrawl
+        const firecrawlUserPageResult = await firecrawlService.scrapePage(request.userPageUrl);
+        if (firecrawlUserPageResult.success && firecrawlUserPageResult.content) {
+          processingSteps.userPageStatus = 'completed';
+          userPageScrapeSource = 'firecrawl';
+          userPageResult = firecrawlUserPageResult; // Use Firecrawl's result
+          logger.info(`✅ [FIRECRAWL] User page scraped successfully (fallback):`, {
+            url: userPageResult.url,
+            contentLength: userPageResult.content.length,
+            contentPreview: userPageResult.content.substring(0, 150) + '...',
+          });
+          userPageContentForPrompt = `--- START OF CONTENT FOR ${userPageResult.url} ---\n${userPageResult.content}\n--- END OF CONTENT FOR ${userPageResult.url} ---\n\n`;
+        } else {
+          processingSteps.userPageStatus = 'failed';
+          userPageScrapeSource = 'gemini_url_context';
+          logger.error(`❌ [FIRECRAWL] User page scraping failed, falling back to Gemini URL Context:`, {
+            url: request.userPageUrl,
+            error: firecrawlUserPageResult.errorDetails,
+            success: firecrawlUserPageResult.success,
+          });
+          logger.warn(`🔄 [GEMINI] FALLBACK: Using URL for Gemini URL Context feature`);
+          userPageContentForPrompt = `--- START OF CONTENT FOR ${userPageResult.url} (Playwright & Firecrawl failed, using URL Context) ---\n${userPageResult.url}\n--- END OF CONTENT FOR ${userPageResult.url} ---\n\n`;
+          userPageFallbackUsed = true;
+        }
       }
 
       this.updateStatus(analysisId, 'processing', 40);
@@ -94,15 +157,34 @@ class AnalysisService {
 
       try {
         competitorResults = await playwrightService.scrapeMultiplePages(uniqueCompetitorUrls);
-        const successfulCompetitorScrapes = competitorResults.filter(r => r.success);
-        const failedCompetitorScrapes = competitorResults.filter(r => !r.success);
+        const successfulPlaywrightScrapes = competitorResults.filter(r => r.success);
+        const failedPlaywrightScrapes = competitorResults.filter(r => !r.success);
 
-        if (successfulCompetitorScrapes.length > 0) {
+        if (failedPlaywrightScrapes.length > 0) {
+          logger.warn(`⚠️ [PLAYWRIGHT] Competitor page scraping partially failed (${failedPlaywrightScrapes.length} failed). Attempting Firecrawl for failed pages.`);
+          const failedUrls = failedPlaywrightScrapes.map(r => r.url);
+          const firecrawlFallbackResults = await firecrawlService.scrapeMultiplePages(failedUrls);
+
+          // Merge Firecrawl results back into competitorResults
+          firecrawlFallbackResults.forEach(firecrawlResult => {
+            const index = competitorResults.findIndex(r => r.url === firecrawlResult.url);
+            if (index !== -1) {
+              competitorResults[index] = firecrawlResult; // Replace Playwright failure with Firecrawl result
+            } else {
+              competitorResults.push(firecrawlResult); // Should not happen if logic is correct
+            }
+          });
+        }
+
+        const successfulScrapes = competitorResults.filter(r => r.success);
+        const failedScrapes = competitorResults.filter(r => !r.success);
+
+        if (successfulScrapes.length > 0) {
           processingSteps.competitorPagesStatus = 'completed';
-          logger.info(`Competitor pages scraped: ${successfulCompetitorScrapes.length} successful out of ${uniqueCompetitorUrls.length} attempted`);
-        } else if (failedCompetitorScrapes.length > 0) {
+          logger.info(`Competitor pages scraped: ${successfulScrapes.length} successful out of ${uniqueCompetitorUrls.length} attempted`);
+        } else if (failedScrapes.length > 0) {
           processingSteps.competitorPagesStatus = 'partial';
-          logger.warn(`Competitor page scraping partially failed: ${failedCompetitorScrapes.length} failed.`);
+          logger.warn(`Competitor page scraping partially failed: ${failedScrapes.length} failed.`);
         } else {
           processingSteps.competitorPagesStatus = 'failed';
           logger.warn(`All competitor page scraping failed.`);
@@ -112,7 +194,7 @@ class AnalysisService {
           if (result.success && result.content) {
             competitorContentsForPrompt.push(`--- START OF CONTENT FOR ${result.url} ---\n${result.content}\n--- END OF CONTENT FOR ${result.url} ---\n`);
           } else {
-            competitorContentsForPrompt.push(`--- START OF CONTENT FOR ${result.url} (Playwright failed, using URL Context) ---\n${result.url}\n--- END OF CONTENT FOR ${result.url} ---\n`);
+            competitorContentsForPrompt.push(`--- START OF CONTENT FOR ${result.url} (Playwright & Firecrawl failed, using URL Context) ---\n${result.url}\n--- END OF CONTENT FOR ${result.url} ---\n`);
           }
         });
 
@@ -120,7 +202,7 @@ class AnalysisService {
         processingSteps.competitorPagesStatus = 'failed';
         logger.warn(`Competitor page batch scraping failed: ${error.message}. All competitor URLs will be passed for Gemini fallback.`);
         uniqueCompetitorUrls.forEach(url => {
-          competitorContentsForPrompt.push(`--- START OF CONTENT FOR ${url} (Playwright failed, using URL Context) ---\n${url}\n--- END OF CONTENT FOR ${url} ---\n`);
+          competitorContentsForPrompt.push(`--- START OF CONTENT FOR ${url} (Playwright & Firecrawl failed, using URL Context) ---\n${url}\n--- END OF CONTENT FOR ${url} ---\n`);
         });
       }
 
@@ -181,14 +263,37 @@ class AnalysisService {
       logger.info('Performing content gap analysis with OpenAI');
       processingSteps.aiAnalysisStatus = 'processing';
 
-      let analysisResult: any;
+      let analysisResult: AnalysisResult;
 
       try {
         // Prepare competitor data - handle cases where some competitors failed
         const validCompetitorPagesForOpenAI = competitorPagesForOpenAI.filter(page => page.cleanedContent);
 
-        logger.info(`Analyzing with ${validCompetitorPagesForOpenAI.length} competitor pages out of ${uniqueCompetitorUrls.length} attempted`);
+        logger.info(`🤖 [GEMINI] Starting AI analysis with data preparation:`, {
+          targetKeyword: request.targetKeyword,
+          userPageContent: userPageForOpenAI.cleanedContent ? userPageForOpenAI.cleanedContent.length : 0,
+          validCompetitorPages: validCompetitorPagesForOpenAI.length,
+          totalAttemptedCompetitors: uniqueCompetitorUrls.length,
+          aiOverviewData: {
+            summaryLength: aiOverview.summaryText.length,
+            referencesCount: aiOverview.references.length,
+            fallbackUsed: aiOverview.fallbackUsed,
+          },
+          scrapedContentLength: scrapedContentForPrompt.length,
+        });
 
+        // Log detailed competitor data        
+        validCompetitorPagesForOpenAI.forEach((page, index) => {
+          logger.info(`📄 [GEMINI] Competitor ${index + 1}:`, {
+            url: page.url,
+            contentLength: page.cleanedContent.length,
+            hasTitle: !!page.title,
+            contentPreview: page.cleanedContent.substring(0, 100) + '...',
+          });
+        });
+
+        logger.info(`🚀 [GEMINI] Calling Gemini analysis service...`);
+        
         analysisResult = await openaiService.analyzeContentGap({
           targetKeyword: request.targetKeyword,
           userPage: userPageForOpenAI,
@@ -198,11 +303,27 @@ class AnalysisService {
           scrapedContent: scrapedContentForPrompt // Pass the constructed scraped content
         });
 
+        logger.info(`✅ [GEMINI] AI analysis completed successfully`);
         processingSteps.aiAnalysisStatus = 'completed';
       } catch (error: any) {
-        logger.error(`OpenAI analysis failed: ${error.message}`);
+        logger.error(`❌ [GEMINI] CRITICAL: AI analysis failed:`, {
+          errorMessage: error.message,
+          errorStack: error.stack,
+          errorName: error.name,
+          analysisId,
+          targetKeyword: request.targetKeyword,
+        });
+        
+        logger.error(`🚨 [GEMINI] Analysis failure details:`, {
+          userPageAvailable: !!userPageForOpenAI.cleanedContent,
+          competitorPagesCount: competitorPagesForOpenAI.filter(page => page.cleanedContent).length,
+          aiOverviewAvailable: !!aiOverview,
+          scrapedContentSize: scrapedContentForPrompt.length,
+        });
+        
         processingSteps.aiAnalysisStatus = 'failed';
 
+        logger.warn(`🔄 [GEMINI] FALLBACK: Generating basic analysis due to Gemini failure`);
         // Provide a basic fallback analysis
         analysisResult = this.generateFallbackAnalysis(request.targetKeyword, aiOverview);
       }
@@ -220,7 +341,7 @@ class AnalysisService {
         },
         competitorUrls: uniqueCompetitorUrls,
         processingSteps,
-        usedFallbackData: aiOverview.fallbackUsed || false,
+        usedFallbackData: aiOverview.fallbackUsed || userPageFallbackUsed || false,
         refinementSuccessful,
         analysisQuality: this.assessAnalysisQuality(
           processingSteps, 
@@ -300,99 +421,43 @@ class AnalysisService {
   /**
    * Generate a basic fallback analysis when AI analysis fails
    */
-  private generateFallbackAnalysis(targetKeyword: string, _aiOverview: any): Omit<AnalysisResult, 'timestamp' | 'analysisId'> {
+  private generateFallbackAnalysis(targetKeyword: string, _aiOverview: any): AnalysisResult {
     return {
-      executiveSummary: {
-        mainReasonForExclusion: `無法完成對 "${targetKeyword}" 的完整分析`,
-        topPriorityAction: `建立關於 "${targetKeyword}" 的基礎內容`,
-        confidenceScore: 30
+      strategyAndPlan: {
+        p1_immediate: [
+          {
+            recommendation: `針對關鍵字 "${targetKeyword}" 建立基礎內容。`, 
+            geminiPrompt: `請為關鍵字 "${targetKeyword}" 撰寫一篇介紹性文章，內容應包含基本定義、重要性及應用場景。`
+          }
+        ],
+        p2_mediumTerm: [],
+        p3_longTerm: []
       },
-      contentGapAnalysis: {
-        missingTopics: [{
-          topic: targetKeyword,
-          description: `缺少關於 "${targetKeyword}" 的詳細內容分析`,
-          importance: 'high',
-          competitorCoverage: 0,
-          implementationComplexity: 'medium'
-        }],
-        missingEntities: [{
-          entity: targetKeyword,
-          type: 'keyword',
-          relevance: 'high',
-          competitorMentions: 0,
-          description: `主要關鍵字 "${targetKeyword}" 需要更深入的內容覆蓋`
-        }],
-        contentDepthGaps: [{
-          area: '核心內容',
-          currentDepth: '淺層',
-          requiredDepth: '深度',
-          competitorAdvantage: '內容分析不足無法確定'
-        }]
+      keywordIntent: {
+        coreIntent: `了解 "${targetKeyword}" 的基本資訊。`,
+        latentIntents: []
       },
-      eatAnalysis: {
-        experience: {
-          userScore: 3,
-          competitorAverage: 5,
-          gaps: ['缺少實際經驗分享'],
-          opportunities: ['增加真實案例和個人經驗']
-        },
-        expertise: {
-          userScore: 3,
-          competitorAverage: 5,
-          gaps: ['專業深度不足'],
-          opportunities: ['展示專業知識和技能']
-        },
-        authoritativeness: {
-          userScore: 3,
-          competitorAverage: 5,
-          gaps: ['權威性信號不足'],
-          opportunities: ['建立業界認可度']
-        },
-        trustworthiness: {
-          userScore: 3,
-          competitorAverage: 5,
-          gaps: ['信任度指標不明確'],
-          opportunities: ['加強透明度和可信度']
-        }
+      aiOverviewAnalysis: {
+        summary: `由於分析失敗，無法提供 "${targetKeyword}" 的 AI Overview 摘要。`,
+        presentationAnalysis: '無'
       },
-      actionablePlan: {
-        immediate: [{
-          action: 'content-research',
-          title: `研究 "${targetKeyword}" 相關內容`,
-          description: '進行關鍵字相關的深度內容研究和創作',
-          impact: 'high',
-          effort: 'medium',
-          timeline: '1-2 週',
-          implementation: '收集相關資料，撰寫基礎內容',
-          expectedOutcome: '建立基本的內容基礎'
-        }],
-        shortTerm: [{
-          action: 'authority-building',
-          title: '建立專業權威性',
-          description: '增加專家引用和可信來源',
-          impact: 'medium',
-          effort: 'medium',
-          timeline: '1 個月',
-          implementation: '尋找業界專家合作或引用',
-          expectedOutcome: '提升內容可信度'
-        }],
-        longTerm: [{
-          action: 'content-optimization',
-          title: '持續優化內容品質',
-          description: '定期更新和改進內容',
-          impact: 'medium',
-          effort: 'low',
-          timeline: '持續進行',
-          implementation: '建立內容更新流程',
-          expectedOutcome: '維持內容競爭力'
-        }]
+      citedSourceAnalysis: [],
+      websiteAssessment: {
+        contentSummary: `無法評估 "${targetKeyword}" 相關的用戶頁面內容。`,
+        contentGaps: [`缺少關於 "${targetKeyword}" 的詳細內容。`],
+        pageExperience: '無法評估',
+        structuredDataRecs: '無建議'
       },
       reportFooter: '本報告由於分析過程中遇到技術問題，僅提供基礎建議。建議重新執行完整分析以獲得更詳細的洞察。',
+      analysisId: 'fallback',
+      timestamp: new Date().toISOString(),
+      aiOverviewData: _aiOverview,
+      competitorUrls: [],
       processingSteps: {
         serpApiStatus: 'completed',
-        userPageStatus: 'unknown',
-        competitorPagesStatus: 'unknown', 
-        contentRefinementStatus: 'skipped',
+        userPageStatus: 'failed',
+        competitorPagesStatus: 'failed',
+        contentRefinementStatus: 'failed',
         aiAnalysisStatus: 'failed'
       },
       qualityAssessment: {

@@ -14,12 +14,15 @@ export const useAnalysis = () => {
   const startAnalysisMutation = useMutation({
     mutationFn: analysisApi.startAnalysis,
     onSuccess: (data) => {
+      console.log('✅ Analysis started successfully:', data);
       // v5.1: Backend always returns jobId, no cache response
       setAnalysisId(data.jobId);
       toast.success('分析已開始，請稍候...');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || '分析失敗，請重試');
+      console.error('❌ Analysis start failed:', error);
+      const errorMessage = error.response?.data?.message || error.message || '分析失敗，請重試';
+      toast.error(errorMessage);
     },
   });
 
@@ -35,6 +38,7 @@ export const useAnalysis = () => {
   // Handle job completion
   useEffect(() => {
     if (status?.status === 'completed' && status.data && analysisId) {
+      console.log('✅ Analysis completed successfully:', status);
       // Stop polling
       queryClient.invalidateQueries({ queryKey: ['jobStatus', analysisId] });
       
@@ -43,19 +47,36 @@ export const useAnalysis = () => {
       setAnalysisId(null);
       toast.success('分析完成！');
     } else if (status?.status === 'completed_with_errors' && status.data && analysisId) {
+      console.warn('⚠️ Analysis completed with errors:', status);
       // Handle completion with warnings
       queryClient.invalidateQueries({ queryKey: ['jobStatus', analysisId] });
       
       setResult(status.data);
       setAnalysisId(null);
       toast.success('分析完成，但有部分警告');
+      
+      // Log warnings for debugging
+      if (status.warnings && status.warnings.length > 0) {
+        console.warn('⚠️ Analysis warnings:', status.warnings);
+      }
     } else if (status?.status === 'failed') {
+      console.error('❌ Analysis failed:', status);
       // Stop polling on failure
       queryClient.invalidateQueries({ queryKey: ['jobStatus', analysisId] });
       setAnalysisId(null);
       
       const errorMessage = status.error?.message || '分析失敗';
       toast.error(errorMessage);
+      
+      // Log detailed error information
+      console.error('💥 Analysis failure details:', {
+        jobId: analysisId,
+        error: status.error,
+        warnings: status.warnings,
+        createdAt: status.createdAt,
+        startedAt: status.startedAt,
+        completedAt: status.completedAt,
+      });
     }
   }, [status, analysisId, queryClient]);
 
