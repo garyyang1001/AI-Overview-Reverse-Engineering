@@ -82,9 +82,12 @@ class PromptService {
 # [USER] 情境與任務
 你將接收一個包含預處理過的關鍵內容摘要的 JSON 物件。你的分析必須完全基於這些提供的摘要。數據包括：
 
-1. \`analysisContext\`: 目標關鍵字和確切的 Google AI Overview 文本
-2. \`userPage\`: 使用者頁面的 URL 和精煉摘要  
-3. \`competitorPages\`: 競爭對手頁面陣列（AI Overview 中引用的）及其精煉摘要
+1. `analysisContext`: 目標關鍵字和確切的 Google AI Overview 文本
+2. `userPage`: 使用者頁面的 URL 和精煉摘要  
+3. `competitorPages`: 競爭對手頁面陣列（AI Overview 中引用的）及其精煉摘要
+
+【已抓取網頁內容】:
+{{scrapedContent}}
 
 你的任務是執行全面的差距分析，並生成策略改進計畫。
 
@@ -113,7 +116,7 @@ class PromptService {
 # [輸出格式]
 你的整個回應必須是單一、有效的 JSON 物件，不包含任何外圍文字或 markdown。嚴格遵循此結構：
 
-\`\`\`json
+```json
 {
   "executiveSummary": {
     "mainReasonForExclusion": "用一句話簡潔說明用戶頁面未被收錄到 AI Overview 的主要原因",
@@ -270,9 +273,10 @@ class PromptService {
       "測量目標頁面的自然流量成長"
     ],
     "timeframe": "3-6 個月內獲得顯著改善"
-  }
+  },
+  "reportFooter": string
 }
-\`\`\`
+```
 
 # [重要指導原則]
 - 分析必須完全基於提供的精煉摘要，不得使用外部知識

@@ -1,17 +1,11 @@
 import OpenAI from 'openai';
 import logger from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
-import { AnalysisResult, PageContent, AIOverviewData } from '../types';
+import { AnalysisResult, PageContent, AIOverviewData, OpenAIInput } from '../types'; // Updated import
 import { costTracker } from './costTracker';
 import { promptService } from './promptService';
 
-interface OpenAIInput {
-  targetKeyword: string;
-  userPage: PageContent;
-  aiOverview: AIOverviewData;
-  competitorPages: PageContent[];
-  jobId: string; // v5.1 必需參數：用於成本追蹤
-}
+// Removed local OpenAIInput interface definition
 
 class OpenAIService {
   private openai: OpenAI | null = null;
@@ -57,7 +51,7 @@ class OpenAIService {
       logger.info('Starting OpenAI analysis...');
       
       const response = await this.openai!.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gemini-1.5-flash', // Updated model name
         messages: [
           {
             role: 'user',
@@ -173,7 +167,8 @@ class OpenAIService {
     return {
       analysisContext: JSON.stringify(analysisContext),
       userPage: JSON.stringify(userPageData),
-      competitorPages: JSON.stringify(competitorPagesData)
+      competitorPages: JSON.stringify(competitorPagesData),
+      scrapedContent: input.scrapedContent // Add this line
     };
   }
   

@@ -24,10 +24,12 @@ export interface JobStatus {
     message: string;
     details?: string;
   }>;
-  data?: any;
+  data?: AnalysisResult;
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  targetKeyword?: string; // Added for caching purposes
+  userPageUrl?: string; // Added for caching purposes
 }
 
 class QueueService {

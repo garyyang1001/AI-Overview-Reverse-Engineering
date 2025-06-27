@@ -3,12 +3,13 @@ import { jobManager } from '../services/jobManager';
 import { cacheService } from '../services/cacheService';
 import logger from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
-import { AnalysisRequest } from '../types';
+import { AnalysisRequest, StartAnalysisResponse } from '../types'; // Added StartAnalysisResponse
 import { costTracker } from '../services/costTracker';
 import { promptService } from '../services/promptService';
+import { JobStatus } from '../services/queueService'; // Import JobStatus
 
 class AnalysisController {
-  async startAnalysis(req: Request, res: Response, next: NextFunction): Promise<any> {
+  async startAnalysis(req: Request, res: Response<StartAnalysisResponse | { error: string }>, next: NextFunction): Promise<any> {
     try {
       const analysisRequest: AnalysisRequest = req.body;
       
@@ -23,9 +24,9 @@ class AnalysisController {
       );
       
       if (costCheck.exceeded) {
-        logger.warn(`Daily cost limit exceeded: $${costCheck.current.toFixed(4)} >= $${costCheck.limit}`);
+        logger.warn(`Daily cost limit exceeded: ${costCheck.current.toFixed(4)} >= ${costCheck.limit}`);
         throw new AppError(
-          `Daily API cost limit exceeded ($${costCheck.limit}). Please try again tomorrow or contact support.`,
+          `Daily API cost limit exceeded (${costCheck.limit}). Please try again tomorrow or contact support.`,
           429,
           'COST_LIMIT_EXCEEDED'
         );
@@ -44,8 +45,7 @@ class AnalysisController {
           return res.json({
             jobId: `cached-${Date.now()}`,
             status: 'completed',
-            fromCache: true,
-            data: JSON.parse(cachedResult)
+            message: 'Analysis job completed successfully from cache.',
           });
         }
       }
@@ -65,7 +65,7 @@ class AnalysisController {
     }
   }
   
-  async getAnalysisResult(req: Request, res: Response, next: NextFunction): Promise<any> {
+  async getAnalysisResult(req: Request, res: Response<JobStatus | { error: string }>, next: NextFunction): Promise<any> {
     try {
       const { jobId } = req.params;
       
@@ -80,43 +80,27 @@ class AnalysisController {
       }
       
       // 構建回應格式
-      const response: any = {
-        jobId: jobStatus.id,
+      const response: JobStatus = {
+        id: jobStatus.id,
         status: jobStatus.status,
         progress: jobStatus.progress,
         createdAt: jobStatus.createdAt,
         startedAt: jobStatus.startedAt,
         completedAt: jobStatus.completedAt,
+        data: jobStatus.data,
+        error: jobStatus.error,
+        warnings: jobStatus.warnings,
+        targetKeyword: jobStatus.targetKeyword,
+        userPageUrl: jobStatus.userPageUrl
       };
       
       // 根據狀態添加相應數據
-      switch (jobStatus.status) {
-        case 'completed':
-          response.data = jobStatus.data;
-          
+      if (jobStatus.status === 'completed' || jobStatus.status === 'completed_with_errors') {
           // 儲存結果到快取（如果是成功完成的）
-          if (jobStatus.data && jobStatus.data.targetKeyword && jobStatus.data.userPageUrl) {
-            const cacheKey = `analysis:${jobStatus.data.targetKeyword}:${jobStatus.data.userPageUrl}`;
+          if (jobStatus.data && jobStatus.targetKeyword && jobStatus.userPageUrl) {
+            const cacheKey = `analysis:${jobStatus.targetKeyword}:${jobStatus.userPageUrl}`;
             await cacheService.set(cacheKey, JSON.stringify(jobStatus.data), 86400); // 24 小時
           }
-          break;
-          
-        case 'completed_with_errors':
-          response.data = jobStatus.data;
-          response.warnings = jobStatus.warnings;
-          break;
-          
-        case 'failed':
-          response.error = jobStatus.error;
-          break;
-          
-        case 'processing':
-          response.message = '分析正在進行中，請稍後再次檢查狀態';
-          break;
-          
-        case 'pending':
-          response.message = '任務在佇列中等待處理';
-          break;
       }
       
       return res.json(response);
