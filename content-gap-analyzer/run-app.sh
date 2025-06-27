@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# 載入後端環境變數
+if [ -f "backend/.env" ]; then
+  export $(grep -v '^#' backend/.env | xargs)
+  echo "✅ 已載入 backend/.env 環境變數"
+else
+  echo "⚠️ 找不到 backend/.env 文件，請確保已配置 API Keys"
+fi
+
 echo "🚀 啟動 AI SEO Content Gap Analyzer"
 echo "=================================="
 
