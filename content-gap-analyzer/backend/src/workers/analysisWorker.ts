@@ -5,13 +5,14 @@ import logger from '../utils/logger';
 
 // 導入各階段服務
 import { serpApiService } from '../services/serpApiService';
-import { playwrightService } from '../services/playwrightService';
+import { crawl4aiService, ScrapeResult } from '../services/crawl4aiService'; // Changed from playwrightService
 import { contentRefinementService } from '../services/contentRefinementService';
 import { openaiService } from '../services/geminiService';
 
 // 導入錯誤處理系統
 import { errorHandler } from '../services/errorHandler';
 import { WorkerStepError } from '../types/errors';
+import { PageContent } from '../shared/types'; // Import PageContent
 
 /**
  * 分析 Worker - 處理完整的 5 階段分析工作流
@@ -135,25 +136,19 @@ class AnalysisWorker {
       processingSteps.competitorPagesStatus = 'processing';
 
       // 爬取用戶頁面
-      let userPage;
+      let userPage: PageContent; // Explicitly type userPage
       try {
-        const userPageResult = await playwrightService.scrapePage(userPageUrl);
+        const userPageResult: ScrapeResult = await crawl4aiService.scrapePage(userPageUrl); // Use crawl4aiService
         
         if (!userPageResult.success) {
           processingSteps.userPageStatus = 'failed';
-          
-          const playwrightError = errorHandler.classifyPlaywrightError(
-            userPageResult.error || 'CONTENT_ERROR',
-            userPageUrl,
-            userPageResult.errorDetails || 'Unknown error'
-          );
           
           const stepError = errorHandler.createWorkerStepError(
             'user_scraping',
             'SCRAPING_FAILED',
             `Failed to scrape user's page: ${userPageResult.error}`,
-            [playwrightError],
-            true  // Changed to true - allow continuation with fallback
+            [],
+            true  // Allow continuation with fallback
           );
           stepErrors.push(stepError);
           
@@ -170,14 +165,10 @@ class AnalysisWorker {
             headings: [],
             cleanedContent: '', // Empty content signals fallback needed
             metaDescription: '',
-            scrapeFailure: {
-              error: userPageResult.error,
-              details: userPageResult.errorDetails,
-              needsFallback: true
-            }
+            // No scrapeFailure property needed here, handled by stepErrors
           };
         } else {
-          // 轉換為舊格式以兼容後續處理
+          // 轉換為 PageContent 格式
           userPage = {
             url: userPageResult.url,
             title: userPageResult.title || '',
@@ -198,7 +189,7 @@ class AnalysisWorker {
             'SCRAPING_FAILED',
             error.message,
             [],
-            true  // Changed to true - allow continuation with fallback
+            true  // Allow continuation with fallback
           );
           stepErrors.push(stepError);
         }
@@ -215,11 +206,7 @@ class AnalysisWorker {
           headings: [],
           cleanedContent: '', // Empty content signals fallback needed
           metaDescription: '',
-          scrapeFailure: {
-            error: 'EXCEPTION',
-            details: error.message,
-            needsFallback: true
-          }
+          // No scrapeFailure property needed here, handled by stepErrors
         };
       }
       
@@ -236,14 +223,14 @@ class AnalysisWorker {
         .filter(url => url !== userPageUrl);
 
       // 批量爬取競爭者頁面
-      let competitorPages: any[] = [];
+      let competitorPages: PageContent[] = []; // Explicitly type competitorPages
       try {
-        const competitorResults = await playwrightService.scrapeMultiplePages(uniqueCompetitorUrls);
-        const successfulResults = competitorResults.filter(result => result.success);
-        const failedResults = competitorResults.filter(result => !result.success);
+        const competitorResults: ScrapeResult[] = await crawl4aiService.scrapeMultiplePages(uniqueCompetitorUrls); // Use crawl4aiService
+        const successfulResults = competitorResults.filter((result: ScrapeResult) => result.success); // Explicitly type result
+        const failedResults = competitorResults.filter((result: ScrapeResult) => !result.success); // Explicitly type result
         
-        // 轉換成功的結果為舊格式
-        competitorPages = successfulResults.map(result => ({
+        // 轉換成功的結果為 PageContent 格式
+        competitorPages = successfulResults.map((result: ScrapeResult) => ({ // Explicitly type result
           url: result.url,
           title: result.title || '',
           headings: result.headings || [],
@@ -254,7 +241,7 @@ class AnalysisWorker {
         // 記錄失敗的頁面
         if (failedResults.length > 0) {
           logger.warn(`Job ${jobId}: ${failedResults.length}/${competitorResults.length} competitor pages failed to scrape`);
-          failedResults.forEach(result => {
+          failedResults.forEach((result: ScrapeResult) => { // Explicitly type result
             logger.warn(`Failed to scrape ${result.url}: ${result.error} - ${result.errorDetails}`);
           });
         }
@@ -284,7 +271,7 @@ class AnalysisWorker {
       let refinementSuccessful = true;
 
       try {
-        refinedContents = await contentRefinementService.refineMultiplePages(allPages, jobId);
+        refinedContents = await contentRefinementService.refineMultiplePages(allPages);
         processingSteps.contentRefinementStatus = 'completed';
       } catch (error: any) {
         logger.warn(`Job ${jobId}: Content refinement failed: ${error.message}`);

@@ -29,4 +29,7 @@ router.post('/validate/prompt-quality', testController.validatePromptQuality);
 // 比較 Prompt 版本性能
 router.post('/compare/prompt-versions', testController.comparePromptVersions);
 
+// Test Crawl4AI
+router.get('/crawl4ai', testController.testCrawl4AI);
+
 export default router;

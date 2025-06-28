@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { AnalysisRequest, AnalysisResult, StartAnalysisResponse } from '../types';
+import { AnalysisRequest, AnalysisResult, StartAnalysisResponse, JobStatus } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3002/api';
 
@@ -74,25 +74,7 @@ api.interceptors.response.use(
   }
 );
 
-export interface JobStatus {
-  id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'completed_with_errors';
-  progress?: number;
-  error?: {
-    code: string;
-    message: string;
-    details?: string;
-  };
-  warnings?: Array<{
-    code: string;
-    message: string;
-    details?: string;
-  }>;
-  data?: AnalysisResult;
-  createdAt: string;
-  startedAt?: string;
-  completedAt?: string;
-}
+// JobStatus interface moved to shared types
 
 export const analysisApi = {
   startAnalysis: async (data: AnalysisRequest): Promise<StartAnalysisResponse> => {

@@ -116,11 +116,33 @@ class AnalysisService {
         ...additionalCompetitorUrls
       ];
 
-      // Remove duplicates and filter out user's own URL
+      // Remove duplicates and filter out user's own URL with robust comparison
       const uniqueCompetitorUrls = Array.from(new Set(allCompetitorUrls))
-        .filter(url => url !== request.userPageUrl);
+        .filter(url => !this.isSameUrl(url, request.userPageUrl));
 
       const dataSource = aiOverview.fallbackUsed ? `${aiOverview.source} (fallback)` : 'AI Overview';
+      
+      // Enhanced logging for URL deduplication
+      logger.info(`🔍 [URL_FILTER] URL deduplication results:`, {
+        userPageUrl: request.userPageUrl,
+        totalSourceUrls: allCompetitorUrls.length,
+        uniqueSourceUrls: Array.from(new Set(allCompetitorUrls)).length,
+        finalCompetitorUrls: uniqueCompetitorUrls.length,
+        duplicatesRemoved: Array.from(new Set(allCompetitorUrls)).length - uniqueCompetitorUrls.length,
+        searchReferences: searchReferences.length,
+        additionalUrls: additionalCompetitorUrls.length
+      });
+      
+      // Log which URLs were filtered out
+      const allUniqueUrls = Array.from(new Set(allCompetitorUrls));
+      const filteredOutUrls = allUniqueUrls.filter(url => this.isSameUrl(url, request.userPageUrl));
+      if (filteredOutUrls.length > 0) {
+        logger.info(`🚫 [URL_FILTER] Filtered out user's URL variants:`, {
+          userPageUrl: request.userPageUrl,
+          filteredUrls: filteredOutUrls
+        });
+      }
+      
       logger.info(`Found ${searchReferences.length} references from ${dataSource}, ${additionalCompetitorUrls.length} additional URLs`);
       logger.info(`🤖 [CRAWL4AI] Batch scraping ${uniqueCompetitorUrls.length} competitor pages`);
       processingSteps.competitorPagesStatus = 'processing';
@@ -569,6 +591,76 @@ class AnalysisService {
         contentGapsCount: result.websiteAssessment?.contentGaps?.length || 0
       });
     }
+  }
+
+  /**
+   * Robust URL comparison that handles common variations
+   * @param url1 - First URL to compare
+   * @param url2 - Second URL to compare
+   * @returns true if URLs are considered the same
+   */
+  private isSameUrl(url1: string, url2: string): boolean {
+    try {
+      // Normalize both URLs
+      const normalizedUrl1 = this.normalizeUrl(url1);
+      const normalizedUrl2 = this.normalizeUrl(url2);
+      
+      const result = normalizedUrl1 === normalizedUrl2;
+      
+      // Log URL comparison for debugging
+      if (result) {
+        logger.debug(`🔍 [URL_FILTER] URLs matched:`, {
+          original1: url1,
+          original2: url2,
+          normalized1: normalizedUrl1,
+          normalized2: normalizedUrl2
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      // If URL parsing fails, fall back to simple string comparison
+      logger.warn(`⚠️ [URL_FILTER] URL parsing failed, using simple comparison:`, {
+        url1,
+        url2,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      return url1 === url2;
+    }
+  }
+
+  /**
+   * Normalize URL for comparison by handling common variations
+   * @param url - URL to normalize
+   * @returns normalized URL string
+   */
+  private normalizeUrl(url: string): string {
+    // Handle URLs that might not have a protocol
+    let normalizedUrl = url.trim();
+    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+      normalizedUrl = 'https://' + normalizedUrl;
+    }
+    
+    const urlObj = new URL(normalizedUrl);
+    
+    // Normalize protocol to https
+    urlObj.protocol = 'https:';
+    
+    // Remove www prefix for comparison
+    urlObj.hostname = urlObj.hostname.replace(/^www\./, '');
+    
+    // Remove trailing slash from pathname
+    if (urlObj.pathname.endsWith('/') && urlObj.pathname.length > 1) {
+      urlObj.pathname = urlObj.pathname.slice(0, -1);
+    }
+    
+    // Sort query parameters for consistent comparison
+    urlObj.searchParams.sort();
+    
+    // Remove hash fragment for comparison
+    urlObj.hash = '';
+    
+    return urlObj.toString();
   }
 
 }

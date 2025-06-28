@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { analysisApi, JobStatus } from '../services/api';
-import { AnalysisRequest, AnalysisResult } from '../types';
+import { analysisApi } from '../services/api';
+import { AnalysisRequest, AnalysisResult, JobStatus } from '../types';
 
 export const useAnalysis = () => {
   const [analysisId, setAnalysisId] = useState<string | null>(null);

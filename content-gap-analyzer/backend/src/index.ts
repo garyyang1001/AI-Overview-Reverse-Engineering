@@ -28,7 +28,7 @@ import testRoutes from './routes/testRoutes';
 // Import and start the analysis worker (after env vars are loaded)
 import analysisWorker from './workers/analysisWorker';
 // Import playwright service for shutdown
-import { playwrightService } from './services/playwrightService';
+
 
 // Debug environment variables
 logger.info('Environment variables loaded', {
@@ -210,10 +210,6 @@ async function gracefulShutdown(reason: string) {
       logger.info('HTTP server closed');
       
       try {
-        // 關閉 Playwright 服務
-        logger.info('Closing Playwright service...');
-        await playwrightService.close();
-        
         // 關閉 Worker
         logger.info('Shutting down analysis worker...');
         await analysisWorker.shutdown();

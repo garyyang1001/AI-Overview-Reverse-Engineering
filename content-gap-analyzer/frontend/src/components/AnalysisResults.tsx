@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { AnalysisResult } from '../types';
-import { JobStatus } from '../services/api';
+import { AnalysisResult, JobStatus, MissingTopic, MissingEntity, ActionItemV5 } from '../types';
 import { Loader2, XCircle, TrendingUp, Users, Award, AlertTriangle, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import AIOverviewDisplay from './AIOverviewDisplay';
 import ReferencesList from './ReferencesList';
@@ -163,16 +162,32 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
       )}
 
       {/* Executive Summary */}
-      <div className="report-section">
-        <h2 className="section-title">執行摘要</h2>
-        <div className="content-block">
-          <p><strong>主要排除原因:</strong> {executiveSummary.mainReasonForExclusion}</p>
-          <p><strong>優先行動:</strong> {executiveSummary.topPriorityAction}</p>
-          {executiveSummary.confidenceScore && (
-            <p><strong>信心分數:</strong> {executiveSummary.confidenceScore}%</p>
-          )}
+      {executiveSummary ? (
+        <div className="report-section">
+          <h2 className="section-title">執行摘要</h2>
+          <div className="content-block">
+            <p><strong>主要排除原因:</strong> {executiveSummary.mainReasonForExclusion}</p>
+            <p><strong>優先行動:</strong> {executiveSummary.topPriorityAction}</p>
+            {executiveSummary.confidenceScore && (
+              <p><strong>信心分數:</strong> {executiveSummary.confidenceScore}%</p>
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="report-section">
+          <h2 className="section-title">執行摘要</h2>
+          <div className="content-block">
+            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md">
+              <p className="text-yellow-800">
+                <strong>⚠️ 執行摘要數據不完整</strong>
+              </p>
+              <p className="text-yellow-700 text-sm mt-2">
+                分析結果可能不完整，請重新執行分析或檢查後端服務狀態。
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content Gap Analysis */}
       <div className="report-section">
@@ -190,7 +205,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
               <div className="block-content">
                 <p className="block-description">需要補充的主題：</p>
                 <ul className="list-unstyled">
-                  {contentGapAnalysis.missingTopics.map((item, index) => (
+                  {contentGapAnalysis.missingTopics.map((item: MissingTopic, index: number) => (
                     <li key={index}>
                       <span className="list-bullet">•</span>
                       <strong>{item.topic}</strong>
@@ -214,7 +229,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
               <div className="block-content">
                 <p className="block-description">需要添加的實體：</p>
                 <div className="entity-list">
-                  {contentGapAnalysis.missingEntities.map((item, index) => (
+                  {contentGapAnalysis.missingEntities.map((item: MissingEntity, index: number) => (
                     <div key={index} className="entity-item">
                       <span className="entity-tag">{item.entity}</span>
                       <p className="entity-description">{item.description}</p>
@@ -265,12 +280,12 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
 
         {actionablePlan?.immediate && actionablePlan.immediate.length > 0 && (
           <PriorityBlock priority="P1" title="立即行動 (1-2 週)">
-            {actionablePlan.immediate.map((action, index) => (
+            {actionablePlan.immediate.map((action: ActionItemV5, index: number) => (
               <ActionItem
                 key={index}
                 title={action.title}
                 description={action.description}
-                geminiPrompt={action.implementation} // Assuming implementation is the prompt
+                geminiPrompt={action.geminiPrompt}
                 implementation={action.implementation}
                 specificSteps={action.specificSteps}
                 measurableGoals={action.measurableGoals}
@@ -281,12 +296,12 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
 
         {actionablePlan?.shortTerm && actionablePlan.shortTerm.length > 0 && (
           <PriorityBlock priority="P2" title="短期計劃 (1-2 個月)">
-            {actionablePlan.shortTerm.map((action, index) => (
+            {actionablePlan.shortTerm.map((action: ActionItemV5, index: number) => (
               <ActionItem
                 key={index}
                 title={action.title}
                 description={action.description}
-                geminiPrompt={action.implementation} // Assuming implementation is the prompt
+                geminiPrompt={action.geminiPrompt}
                 implementation={action.implementation}
                 specificSteps={action.specificSteps}
                 measurableGoals={action.measurableGoals}
@@ -297,12 +312,12 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
 
         {actionablePlan?.longTerm && actionablePlan.longTerm.length > 0 && (
           <PriorityBlock priority="P3" title="長期策略 (3+ 個月)">
-            {actionablePlan.longTerm.map((action, index) => (
+            {actionablePlan.longTerm.map((action: ActionItemV5, index: number) => (
               <ActionItem
                 key={index}
                 title={action.title}
                 description={action.description}
-                geminiPrompt={action.implementation} // Assuming implementation is the prompt
+                geminiPrompt={action.geminiPrompt}
                 implementation={action.implementation}
                 specificSteps={action.specificSteps}
                 measurableGoals={action.measurableGoals}
@@ -325,7 +340,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
                 <div className="detail-group">
                   <span className="detail-label">優勢:</span>
                   <ul className="list-unstyled">
-                    {competitorInsights.topPerformingCompetitor.strengths.map((strength, index) => (
+                    {competitorInsights.topPerformingCompetitor.strengths.map((strength: string, index: number) => (
                       <li key={index}>• {strength}</li>
                     ))}
                   </ul>
@@ -333,7 +348,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
                 <div className="detail-group">
                   <span className="detail-label">關鍵差異化因素:</span>
                   <ul className="list-unstyled">
-                    {competitorInsights.topPerformingCompetitor.keyDifferentiators.map((diff, index) => (
+                    {competitorInsights.topPerformingCompetitor.keyDifferentiators.map((diff: string, index: number) => (
                       <li key={index}>• {diff}</li>
                     ))}
                   </ul>
@@ -346,7 +361,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
             <div className="content-block">
               <h3 className="block-title">共同模式</h3>
               <ul className="list-unstyled">
-                {competitorInsights.commonPatterns.map((pattern, index) => (
+                {competitorInsights.commonPatterns.map((pattern: string, index: number) => (
                   <li key={index}>• {pattern}</li>
                 ))}
               </ul>
@@ -370,7 +385,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
               <div className="detail-group">
                 <span className="detail-label">追蹤建議:</span>
                 <ul className="list-unstyled">
-                  {successMetrics.trackingRecommendations.map((rec, index) => (
+                  {successMetrics.trackingRecommendations.map((rec: string, index: number) => (
                     <li key={index}>• {rec}</li>
                   ))}
                 </ul>
@@ -595,7 +610,7 @@ const ErrorDetailsSection: React.FC<{ result: AnalysisResult; status?: JobStatus
           <div>
             <h4 className="font-medium text-orange-800 mb-2">🔍 步驟執行狀態:</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-              {Object.entries(result.processingSteps || {}).map(([step, status]) => {
+              {Object.entries(result.processingSteps || {}).map(([step, status]: [string, string]) => {
                 const isError = status === 'failed';
                 const errorInfo = getStepErrorInfo(step, status);
                 
@@ -613,7 +628,7 @@ const ErrorDetailsSection: React.FC<{ result: AnalysisResult; status?: JobStatus
                         status === 'partial' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
-                        {status}
+                        {String(status)}
                       </span>
                     </div>
                     {errorInfo && (

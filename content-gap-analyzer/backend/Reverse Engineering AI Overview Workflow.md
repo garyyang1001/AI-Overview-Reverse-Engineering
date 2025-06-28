@@ -43,10 +43,9 @@ d. 建議改進計劃區塊
 
 專案使用工具
 - **SERP API：** 抓取關鍵字搜尋之後的 AI Overview 結果以及被 AI Overview 引用的網站網址。
-- **Playwright：** 作為**主要的**網頁內容抓取工具。系統會優先使用 Playwright 獲取網頁的乾淨文字內容。
+- **CRAWL4AI：** 作為**主要的**網頁內容抓取工具負責獲取網頁的乾淨文字內容。
 - **Google Gemini API：**
     - **核心分析模型：** `gemini-2.5-flash`
-    - **備用內容抓取機制：** 當 Playwright 抓取失敗時，利用此模型內建的 **URL Context** 功能作為備用方案，直接讀取並分析該網址內容。
 
 工作流程 (從使用者點擊到報告產出)
 此流程描述了從使用者在前端介面提交請求，到後端完成分析並回傳結果的完整數據流與處理步驟。
@@ -61,8 +60,8 @@ d. 建議改進計劃區塊
     *   使用【使用者提供關鍵字】呼叫 SERP API，取得最新的 Google AI Overview 完整內容，以及其引用的所有【被引用網址列表】。
 
 2.  **網頁內容抓取 (Hybrid Approach)：**
-    *   **主要流程 (Primary Flow - Playwright)：**
-        *   系統觸發 `playwrightService`，以並行方式嘗試抓取以下所有網頁的乾淨文字內容：
+    *   **主要流程 (Primary Flow - CRAWL4AI)：**
+        *   系統觸發 `crawl4aiService`，以並行方式嘗試抓取以下所有網頁的乾淨文字內容：
             *   使用者提供的【使用者提供網址】。
             *   【被引用網址列表】中的每一個網址。
     *   **錯誤處理與記錄 (Error Handling)：**
@@ -78,7 +77,7 @@ d. 建議改進計劃區塊
 
 2.  **執行 AI 分析 (Execute AI Analysis)：**
     *   系統觸發 `geminiService`，將最終組合好的「混合式 Prompt」發送給 **Google Gemini 2.5 Flash (model: `gemini-2.5-flash`)** 模型。
-    *   **關鍵功能：** 模型會直接使用 Prompt 中提供的現成文字內容。對於 Prompt 中僅有的 URL 字串（即 Playwright 失敗的那些），模型將自動啟用其內建的 **URL Context** 功能作為備用方案，自行存取並分析這些網址。這個策略確保了最高的資料完整性與系統穩定性。
+    *   **關鍵功能：** 模型會直接使用 Prompt 中提供的現成文字內容。對於 Prompt 中僅有的 URL 字串（即 CRAWL4AI 失敗的那些），模型將自動啟用其內建的 **URL Context** 功能作為備用方案，自行存取並分析這些網址。這個策略確保了最高的資料完整性與系統穩定性。
 
 **第三步：結果呈現 (Result Presentation)**
 *(此步驟維持不變)*
@@ -86,6 +85,7 @@ d. 建議改進計劃區塊
 **註：非同步處理 (Asynchronous Processing)**
 *(此步驟維持不變)* 
 
+**Prompt範例** 
 - prompt: 當您提供以下資料時，我將會依照這個經過調整的格式為您產出報告：
 
 【使用者提供關鍵字】: [請在此處填寫您要分析的核心關鍵字]
@@ -99,14 +99,14 @@ d. 建議改進計劃區塊
 
 【已抓取網頁內容】:
 --- START OF CONTENT FOR [使用者提供網址] ---
-[此處貼上 Playwright 抓取到的使用者網址的完整文字內容]
+[此處貼上 CRAWL4AI 抓取到的使用者網址的完整文字內容]
 --- END OF CONTENT FOR [使用者提供網址] ---
 
 --- START OF CONTENT FOR [被引用網址1] ---
-[此處貼上 Playwright 抓取到的被引用網址1的完整文字內容]
+[此處貼上 CRAWL4AI 抓取到的被引用網址1的完整文字內容]
 --- END OF CONTENT FOR [被引用網址1] ---
 
-(對於 Playwright 抓取失敗的網址，我們則不在此處提供內容，模型將會依賴其 URL Context 功能進行備用處理)
+(對於 CRAWL4AI 抓取失敗的網址，我們則不在此處提供內容，模型將會依賴其 URL Context 功能進行備用處理)
 
 【終極指令：AI逆向工程與SEO戰略分析報告】
 # 指令開始 #

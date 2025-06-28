@@ -82,8 +82,8 @@ async function debugAnalysis() {
     console.log('返回結果類型:', typeof result);
     console.log('返回結果鍵:', Object.keys(result));
     
-    if (result.executiveSummary) {
-      console.log('執行摘要:', result.executiveSummary);
+    if (result.reportFooter) {
+      console.log('報告結尾:', result.reportFooter);
     }
     
     console.log('\n=== 調試完成 ===');

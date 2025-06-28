@@ -24,13 +24,13 @@ async function testContentRefinement() {
   };
 
   console.log('1. 測試咖啡豆內容精煉...');
-  const refined1 = await contentRefinementService.refinePage(testContent1, 'test-1');
+  const refined1 = await contentRefinementService.refinePage(testContent1);
   console.log('原始內容:', testContent1.cleanedContent);
   console.log('精煉結果:', refined1.refinedSummary);
   console.log('');
 
   console.log('2. 測試睡眠習慣內容精煉...');
-  const refined2 = await contentRefinementService.refinePage(testContent2, 'test-2');
+  const refined2 = await contentRefinementService.refinePage(testContent2);
   console.log('原始內容:', testContent2.cleanedContent);
   console.log('精煉結果:', refined2.refinedSummary);
   console.log('');

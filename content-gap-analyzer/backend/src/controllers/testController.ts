@@ -8,6 +8,7 @@ import { testingService } from '../services/testingService';
 import { goldenTestSet } from '../tests/goldenTestSet';
 import logger from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
+import { crawl4aiService } from '../services/crawl4aiService'; // Import crawl4aiService
 
 class TestController {
   /**
@@ -244,6 +245,43 @@ class TestController {
           }
         }
       });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async testCrawl4AI(_req: Request, res: Response, next: NextFunction): Promise<any> {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        throw new AppError('Test execution is only allowed in development environment', 403, 'TEST_DISABLED');
+      }
+
+      logger.info('Starting Crawl4AI test scrape for https://example.com');
+      const testUrl = 'https://example.com';
+      const result = await crawl4aiService.scrapePage(testUrl);
+
+      if (result.success) {
+        logger.info(`Crawl4AI test scrape successful for ${testUrl}`);
+        return res.json({
+          success: true,
+          message: `Successfully scraped ${testUrl}`,
+          data: {
+            url: result.url,
+            contentLength: result.content?.length,
+            title: result.title,
+            metaDescription: result.metaDescription,
+            // You can add more fields from result here if needed for debugging
+          }
+        });
+      } else {
+        logger.error(`Crawl4AI test scrape failed for ${testUrl}:`, result.errorDetails);
+        return res.status(500).json({
+          success: false,
+          message: `Failed to scrape ${testUrl}`,
+          error: result.error,
+          errorDetails: result.errorDetails
+        });
+      }
     } catch (error) {
       return next(error);
     }

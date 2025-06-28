@@ -69,7 +69,7 @@ async function debugFullWorkflow() {
       // 3. 測試內容精煉
       console.log('3. 測試內容精煉...');
       const allPages = [mockUserPage, ...mockCompetitorPages];
-      const refinedContents = await contentRefinementService.refineMultiplePages(allPages, `debug-${i}-${Date.now()}`);
+      const refinedContents = await contentRefinementService.refineMultiplePages(allPages);
       
       console.log('✅ 內容精煉完成');
       console.log(`精煉頁面數量: ${refinedContents.length}`);

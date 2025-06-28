@@ -1,9 +1,7 @@
-import OpenAI from 'openai';
-import { encoding_for_model } from 'tiktoken';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import logger from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
 import { PageContent } from '../types';
-import { costTracker } from './costTracker';
 import { promptService } from './promptService';
 
 interface RefinedContent {
@@ -20,45 +18,40 @@ interface RefinedContent {
 }
 
 class ContentRefinementService {
-  private openai: OpenAI | null = null;
-  private tokenizer: any = null;
+  private genAI: GoogleGenerativeAI | null = null;
   
   constructor() {
     // Lazy initialization
   }
   
   private initializeIfNeeded() {
-    if (!this.openai) {
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey || apiKey.trim() === '') {
-        throw new AppError('OpenAI API key not configured', 500, 'OPENAI_KEY_MISSING');
+    if (!this.genAI) {
+      const apiKey = process.env.GEMINI_API_KEY || '';
+      if (!apiKey || apiKey.trim() === '' || apiKey === 'your_gemini_api_key_here') {
+        logger.warn('Gemini API key not configured for Content Refinement Service');
+        throw new AppError('Gemini API key not configured for Content Refinement', 500, 'GEMINI_KEY_MISSING');
       }
       
-      this.openai = new OpenAI({
-        apiKey: apiKey.trim()
-      });
+      this.genAI = new GoogleGenerativeAI(apiKey);
       
-      // Initialize tokenizer for gpt-4o-mini (use gpt-4 tokenizer as closest match)
-      this.tokenizer = encoding_for_model('gpt-4o');
-      
-      logger.info('Content Refinement Service initialized with OpenAI and tiktoken');
+      logger.info('Content Refinement Service initialized with GoogleGenerativeAI');
     }
   }
   
   /**
-   * Count tokens in text using tiktoken
+   * Count tokens in text (simplified for Gemini, as direct token counting might not be needed for chunking)
    */
   private countTokens(text: string): number {
-    if (!this.tokenizer) {
-      this.initializeIfNeeded();
-    }
-    return this.tokenizer.encode(text).length;
+    // For Gemini, we might not need precise tiktoken counting for chunking
+    // A simple character count or word count can be a proxy for chunking
+    // Or, rely on Gemini's internal tokenization for context window management
+    return text.length; // Using character length as a proxy for now
   }
   
   /**
    * Split content into chunks based on logical boundaries (H2 headings) or token count
    */
-  private splitIntoChunks(content: string, maxChunkTokens: number = 4000): string[] {
+  private splitIntoChunks(content: string, maxChunkTokens: number = 30000): string[] { // Increased maxChunkTokens for Gemini's larger context
     const totalTokens = this.countTokens(content);
     if (totalTokens <= maxChunkTokens) {
       return [content];
@@ -155,7 +148,7 @@ class ContentRefinementService {
   /**
    * Refine a single text chunk using the content refinement prompt
    */
-  private async refineChunk(chunk: string, jobId?: string): Promise<{ success: boolean; content: string; error?: string }> {
+  private async refineChunk(chunk: string): Promise<{ success: boolean; content: string; error?: string }> {
     this.initializeIfNeeded();
     
     // v2.0 使用標準化 Prompt 服務
@@ -174,49 +167,35 @@ class ContentRefinementService {
 
     // 獲取 Prompt 元數據以配置 API 調用
     const promptMeta = promptService.getPromptMetadata('content_refinement');
-    const maxResponseTokens = promptMeta?.maxTokens || 1500;
     const temperature = promptMeta?.temperature || 0.3;
 
-    // Check token count before sending - gpt-4o-mini has 128K context window
-    const promptTokens = this.countTokens(refinementPrompt);
-    const safetyMargin = 1000;
-    const maxTotalTokens = 32000; // Conservative limit for gpt-4o-mini (much higher capacity)
-    
-    if (promptTokens + maxResponseTokens + safetyMargin > maxTotalTokens) {
-      logger.warn(`Chunk too large for refinement: ${promptTokens} tokens. Returning original chunk (truncated).`);
-      return {
-        success: false,
-        content: chunk.substring(0, Math.floor(chunk.length * 0.5)), // Return first half as fallback
-        error: 'Chunk too large for refinement'
-      };
-    }
-
     try {
-      const response = await this.openai!.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'user', content: refinementPrompt }
-        ],
-        temperature,
-        max_tokens: maxResponseTokens
+      const model = this.genAI!.getGenerativeModel({ 
+        model: 'gemini-1.5-flash', // Using 1.5-flash for refinement
+        generationConfig: {
+          temperature: temperature,
+        }
       });
 
-      // v5.1 新增：成本追蹤
-      if (response.usage && jobId) {
-        costTracker.recordContentRefinementCost(
-          jobId,
-          response.usage.prompt_tokens,
-          response.usage.completion_tokens
-        );
-      }
+      const result = await model.generateContent(refinementPrompt);
+      const response = await result.response;
+      const refinedContent = response.text();
       
-      const refinedContent = response.choices[0]?.message?.content || '';
+      // TODO: Implement cost tracking for Gemini if needed
+      // if (response.usage && jobId) {
+      //   costTracker.recordContentRefinementCost(
+      //     jobId,
+      //     response.usage.prompt_tokens,
+      //     response.usage.completion_tokens
+      //   );
+      // }
+      
       return {
         success: true,
         content: refinedContent
       };
     } catch (error: any) {
-      logger.warn(`Failed to refine chunk (${promptTokens} tokens):`, error);
+      logger.warn(`Failed to refine chunk:`, error);
       // Return original chunk as fallback instead of throwing
       return {
         success: false,
@@ -229,7 +208,7 @@ class ContentRefinementService {
   /**
    * Refine a single page content using parallel chunk processing
    */
-  async refinePage(pageContent: PageContent, jobId?: string): Promise<RefinedContent> {
+  async refinePage(pageContent: PageContent): Promise<RefinedContent> {
     this.initializeIfNeeded();
     
     const { url, cleanedContent } = pageContent;
@@ -242,7 +221,7 @@ class ContentRefinementService {
     logger.info(`Split into ${chunks.length} chunks for ${url}`);
     
     // Step 2: Parallel refinement of chunks with error handling
-    const refinementPromises = chunks.map(chunk => this.refineChunk(chunk, jobId));
+    const refinementPromises = chunks.map(chunk => this.refineChunk(chunk));
     const refinementResults = await Promise.all(refinementPromises);
     
     // Count successes and failures
@@ -283,10 +262,10 @@ class ContentRefinementService {
   /**
    * Refine multiple pages in parallel
    */
-  async refineMultiplePages(pages: PageContent[], jobId?: string): Promise<RefinedContent[]> {
+  async refineMultiplePages(pages: PageContent[]): Promise<RefinedContent[]> {
     logger.info(`Starting parallel refinement of ${pages.length} pages`);
     
-    const refinementPromises = pages.map(page => this.refinePage(page, jobId));
+    const refinementPromises = pages.map(page => this.refinePage(page));
     const results = await Promise.all(refinementPromises);
     
     const totalOriginal = results.reduce((sum, r) => sum + r.originalLength, 0);
@@ -306,8 +285,8 @@ class ContentRefinementService {
   /**
    * 公共方法：精煉單個內容塊（用於測試）
    */
-  async refineChunkPublic(content: string, jobId?: string): Promise<{ success: boolean; content: string; error?: string }> {
-    return this.refineChunk(content, jobId);
+  async refineChunkPublic(content: string): Promise<{ success: boolean; content: string; error?: string }> {
+    return this.refineChunk(content);
   }
 }
 
