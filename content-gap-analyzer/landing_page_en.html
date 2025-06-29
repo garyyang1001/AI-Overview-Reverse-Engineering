@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Overview Reverse Engineering: Complete Content Gap Analysis Guide</title>
+    <meta name="description" content="How can your content stand out when Google AI Overview dominates search results? Master AI-era SEO strategies through advanced reverse engineering technology.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --primary-light: #d1fae5;
+            --secondary: #3b82f6;
+            --secondary-dark: #1d4ed8;
+            --secondary-light: #dbeafe;
+            --accent: #f59e0b;
+            --accent-light: #fef3c7;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --text-light: #6b7280;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
+            --border: #e5e7eb;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-light) 100%);
+        }
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .tab-active {
+            background-color: var(--primary);
+            color: white;
+        }
+        .loading-dots::after {
+            content: '...';
+            animation: loading 1.4s infinite;
+        }
+        @keyframes loading {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--primary-light);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-dark);
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+        .workflow-line {
+            position: absolute;
+            top: 24px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: var(--border);
+            z-index: -1;
+        }
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .sticky-nav {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid var(--border);
+        }
+        .section-padding {
+            padding: 80px 0;
+        }
+        @media (max-width: 768px) {
+            .section-padding {
+                padding: 40px 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-white">
+
+    <!-- Hero Section -->
+    <section class="hero-gradient">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-24">
+            <div class="text-center max-w-4xl mx-auto">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                    The AI Overview Era
+                    <br>
+                    <span class="gradient-text">Reverse Engineer Your SEO Strategy</span>
+                </h1>
+                <p class="text-xl text-gray-700 mb-8 leading-relaxed">
+                    When AI summaries dominate the top of search results, how can your content still be seen?
+                    <br>
+                    We use reverse engineering technology to decode AI Overview algorithms and find the key to content breakthrough.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="#demo" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-medium rounded-lg text-white bg-primary hover:bg-primary-dark transition">
+                        View Real Case Study
+                        <svg class="ml-2 -mr-1 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        </svg>
+                    </a>
+                    <a href="#how-it-works" class="inline-flex items-center justify-center px-8 py-4 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">
+                        How It Works
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section id="problem" class="section-padding bg-gray-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    AI Overview Is Changing Everything
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Google's AI-generated summaries appear directly at the top of search results, allowing users to get answers without clicking.
+                    This poses unprecedented challenges to traditional SEO strategies.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white rounded-xl p-6 card-hover border border-gray-200">
+                    <div class="feature-icon">📉</div>
+                    <h3 class="text-xl font-semibold mb-2">Plummeting Click Rates</h3>
+                    <p class="text-gray-600">Research shows AI Overview could lead to website traffic drops of up to 25%</p>
+                </div>
+                <div class="bg-white rounded-xl p-6 card-hover border border-gray-200">
+                    <div class="feature-icon">🤖</div>
+                    <h3 class="text-xl font-semibold mb-2">Content "Absorption"</h3>
+                    <p class="text-gray-600">Your carefully crafted content may be simplified by AI summaries, losing its original value proposition</p>
+                </div>
+                <div class="bg-white rounded-xl p-6 card-hover border border-gray-200">
+                    <div class="feature-icon">⚠️</div>
+                    <h3 class="text-xl font-semibold mb-2">Information Accuracy</h3>
+                    <p class="text-gray-600">AI may generate "hallucinations" or cite incorrect information, affecting brand trust</p>
+                </div>
+                <div class="bg-white rounded-xl p-6 card-hover border border-gray-200">
+                    <div class="feature-icon">🏆</div>
+                    <h3 class="text-xl font-semibold mb-2">Higher E-E-A-T Threshold</h3>
+                    <p class="text-gray-600">Only truly authoritative and expert content can be adopted and cited by AI</p>
+                </div>
+            </div>
+
+            <div class="mt-12 bg-amber-50 border border-amber-200 rounded-xl p-6">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-lg font-medium text-amber-800">Critical Alert</h3>
+                        <p class="mt-2 text-amber-700">
+                            According to latest data, 65% of search queries now trigger AI Overview. Failure to take action means you could lose most of your organic traffic.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section id="solution" class="section-padding">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    Turn Crisis Into Opportunity
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Our content gap analyzer uses reverse engineering technology to help you understand AI Overview algorithms
+                    and find precise directions for content optimization.
+                </p>
+            </div>
+
+            <!-- Interactive Feature Showcase -->
+            <div class="bg-gray-50 rounded-2xl p-8">
+                <div class="flex flex-col lg:flex-row items-center gap-8">
+                    <div class="flex-1">
+                        <h3 class="text-2xl font-bold mb-4">Core Technology: Reverse Engineering Analysis</h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <strong>AI Overview Deconstruction:</strong> Automatically extract and analyze Google AI summary content and citation sources
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <strong>Deep Content Comparison:</strong> Use Gemini AI to compare differences between your content and successful examples
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <strong>Precise Improvement Recommendations:</strong> Generate specific, actionable content optimization strategies and AI prompts
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-white rounded-xl p-6 shadow-lg">
+                            <div class="text-center mb-4">
+                                <span class="text-sm text-gray-500">Analysis Success Rate</span>
+                            </div>
+                            <div class="relative mx-auto" style="width: 200px; height: 200px;">
+                                <canvas id="successChart"></canvas>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <div class="text-4xl font-bold gradient-text">94.7%</div>
+                                        <div class="text-sm text-gray-500">Accuracy Rate</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <div class="text-lg font-semibold text-gray-700">2.5K+</div>
+                                    <div class="text-xs text-gray-500">Analysis Cases</div>
+                                </div>
+                                <div>
+                                    <div class="text-lg font-semibold text-gray-700">15sec</div>
+                                    <div class="text-xs text-gray-500">Avg Analysis Time</div>
+                                </div>
+                                <div>
+                                    <div class="text-lg font-semibold text-gray-700">98%</div>
+                                    <div class="text-xs text-gray-500">Client Satisfaction</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Professional Analysis Methods Section -->
+    <section class="section-padding bg-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    Professional Analysis Methodology
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    We employ three core technologies to ensure accuracy and practicality of analysis results
+                </p>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-8 mb-16">
+                <!-- AI Overview Reverse Engineering -->
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-100">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-blue-900 mb-4">AI Overview Reverse Engineering</h3>
+                    <ul class="space-y-3 text-sm text-blue-800">
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2 mt-1">▪</span>
+                            <span><strong>Summary Structure Analysis:</strong> Deconstruct the logical architecture of AI-generated content</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2 mt-1">▪</span>
+                            <span><strong>Citation Source Tracking:</strong> Deep analysis of each cited website's weight and role</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2 mt-1">▪</span>
+                            <span><strong>Content Selection Criteria:</strong> Identify AI preferences for content characteristics and formats</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2 mt-1">▪</span>
+                            <span><strong>Algorithm Insights:</strong> Understand Google AI's content filtering mechanisms</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Keyword Intent Analysis -->
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-8 border border-green-100">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-green-900 mb-4">Keyword Intent Analysis</h3>
+                    <ul class="space-y-3 text-sm text-green-800">
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2 mt-1">▪</span>
+                            <span><strong>User Demand Mining:</strong> Analyze the true intent behind search queries</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2 mt-1">▪</span>
+                            <span><strong>Intent Layer Analysis:</strong> Classify informational, navigational, and transactional intents</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2 mt-1">▪</span>
+                            <span><strong>Demand Weight Calculation:</strong> Quantify the importance of different user needs</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2 mt-1">▪</span>
+                            <span><strong>Content Strategy Recommendations:</strong> Optimize content structure based on intent insights</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- E-E-A-T Evaluation Standards -->
+                <div class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-8 border border-purple-100">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-6">
+                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-purple-900 mb-4">E-E-A-T Evaluation Standards</h3>
+                    <ul class="space-y-3 text-sm text-purple-800">
+                        <li class="flex items-start">
+                            <span class="text-purple-500 mr-2 mt-1">▪</span>
+                            <span><strong>Experience:</strong> Real-world use cases and first-hand experiences</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-purple-500 mr-2 mt-1">▪</span>
+                            <span><strong>Expertise:</strong> Knowledge depth and technical authority</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-purple-500 mr-2 mt-1">▪</span>
+                            <span><strong>Authoritativeness:</strong> Industry standing and influence</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-purple-500 mr-2 mt-1">▪</span>
+                            <span><strong>Trustworthiness:</strong> Information reliability and transparency</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Technical Process -->
+            <div class="bg-gray-50 rounded-2xl p-8">
+                <h3 class="text-2xl font-bold text-center mb-8">Technical Processing Workflow</h3>
+                <div class="grid md:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-lg font-bold">1</div>
+                        <h4 class="font-semibold mb-2">Data Collection</h4>
+                        <p class="text-sm text-gray-600">Extract AI Overview and citation sources using SerpAPI</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-lg font-bold">2</div>
+                        <h4 class="font-semibold mb-2">Content Analysis</h4>
+                        <p class="text-sm text-gray-600">Deep crawling with Crawl4AI and analysis with Gemini 2.5 Flash</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-purple-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-lg font-bold">3</div>
+                        <h4 class="font-semibold mb-2">Evaluation Calculation</h4>
+                        <p class="text-sm text-gray-600">Multi-dimensional scoring and weight calculation</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-lg font-bold">4</div>
+                        <h4 class="font-semibold mb-2">Strategy Generation</h4>
+                        <p class="text-sm text-gray-600">P1-P3 priority classification and actionable recommendations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analysis Capabilities Section -->
+    <section class="section-padding bg-gray-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    Deep Analysis Capabilities
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Beyond surface-level analysis, our system can deeply deconstruct every detail of AI Overview,
+                    providing you with competitor-level deep insights
+                </p>
+            </div>
+
+            <!-- Analysis Stats -->
+            <div class="grid md:grid-cols-3 gap-8 mb-12">
+                <div class="bg-white rounded-xl p-6 text-center shadow-lg">
+                    <div class="text-4xl font-bold text-primary mb-2">13+</div>
+                    <div class="text-lg font-semibold text-gray-700 mb-2">Citation Source Analysis</div>
+                    <p class="text-sm text-gray-600">Automatically extract and deeply analyze every cited website in AI Overview</p>
+                </div>
+                <div class="bg-white rounded-xl p-6 text-center shadow-lg">
+                    <div class="text-4xl font-bold text-primary mb-2">4x</div>
+                    <div class="text-lg font-semibold text-gray-700 mb-2">E-E-A-T Evaluation</div>
+                    <p class="text-sm text-gray-600">Four-dimensional assessment: Experience, Expertise, Authoritativeness, Trustworthiness</p>
+                </div>
+                <div class="bg-white rounded-xl p-6 text-center shadow-lg">
+                    <div class="text-4xl font-bold text-primary mb-2">P1-P3</div>
+                    <div class="text-lg font-semibold text-gray-700 mb-2">Priority Classification</div>
+                    <p class="text-sm text-gray-600">Impact × Execution Difficulty matrix for precise improvement recommendation ranking</p>
+                </div>
+            </div>
+
+            <!-- E-E-A-T Matrix -->
+            <div class="bg-white rounded-2xl p-8 shadow-lg mb-8">
+                <h3 class="text-2xl font-bold text-center mb-8">E-E-A-T Evaluation Matrix</h3>
+                <div class="grid md:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">🎯</span>
+                        </div>
+                        <h4 class="font-semibold text-blue-600 mb-2">Experience</h4>
+                        <p class="text-sm text-gray-600">Real experience and use case depth</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">🔬</span>
+                        </div>
+                        <h4 class="font-semibold text-green-600 mb-2">Expertise</h4>
+                        <p class="text-sm text-gray-600">Professional knowledge and technical authority</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">🏆</span>
+                        </div>
+                        <h4 class="font-semibold text-purple-600 mb-2">Authoritativeness</h4>
+                        <p class="text-sm text-gray-600">Industry authority and influence</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">🛡️</span>
+                        </div>
+                        <h4 class="font-semibold text-orange-600 mb-2">Trustworthiness</h4>
+                        <p class="text-sm text-gray-600">Information credibility and website security</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Competitor Analysis -->
+            <div class="bg-white rounded-2xl p-8 shadow-lg">
+                <h3 class="text-2xl font-bold text-center mb-8">Deep Competitor Analysis</h3>
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">📊 Our Analysis Includes:</h4>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Domain authority and traffic estimation</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Content structure and information density analysis</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Keyword coverage and intent matching</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Professional citations and fact-checking standards</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">🎯 Analysis Application:</h4>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600 mb-2">Example: Health Information Website</div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm">Expertise Score</span>
+                                <div class="flex items-center">
+                                    <div class="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 85%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium">85%</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm">Authority Score</span>
+                                <div class="flex items-center">
+                                    <div class="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="bg-blue-500 h-2 rounded-full" style="width: 72%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium">72%</span>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-2">
+                                Comprehensive evaluation based on E-E-A-T standards
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="section-padding bg-gray-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    Complete Analysis in Four Steps
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    From data collection to report generation, fully automated processing
+                </p>
+            </div>
+
+            <!-- Workflow Steps -->
+            <div class="relative">
+                <div class="hidden md:block workflow-line"></div>
+                <div class="grid md:grid-cols-4 gap-8">
+                    <div class="relative">
+                        <div class="bg-white rounded-xl p-6 text-center">
+                            <div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
+                            <h4 class="text-lg font-semibold mb-2">Data Collection</h4>
+                            <p class="text-gray-600 text-sm">Automatically extract AI Overview summaries and citation sources</p>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <div class="bg-white rounded-xl p-6 text-center">
+                            <div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
+                            <h4 class="text-lg font-semibold mb-2">Content Crawling</h4>
+                            <p class="text-gray-600 text-sm">Deep crawling of all relevant web content</p>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <div class="bg-white rounded-xl p-6 text-center">
+                            <div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">3</div>
+                            <h4 class="text-lg font-semibold mb-2">AI Analysis</h4>
+                            <p class="text-gray-600 text-sm">Gemini AI deep analysis of content gaps</p>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <div class="bg-white rounded-xl p-6 text-center">
+                            <div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">4</div>
+                            <h4 class="text-lg font-semibold mb-2">Report Generation</h4>
+                            <p class="text-gray-600 text-sm">Generate actionable optimization recommendations</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quality Assurance Section -->
+            <div class="mt-16 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-8">
+                <div class="text-center mb-8">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Quality Assurance & Transparency Commitment</h3>
+                    <p class="text-lg text-gray-600">Every processing step is transparent, ensuring result credibility and practicality</p>
+                </div>
+
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <!-- Processing Transparency -->
+                    <div>
+                        <h4 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                            <svg class="w-6 h-6 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Four-Step Processing Transparency
+                        </h4>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+                                <div class="flex items-center mb-2">
+                                    <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">1</span>
+                                    <span class="font-semibold text-gray-800">AI Overview Extraction</span>
+                                    <span class="ml-auto text-sm text-green-600 font-medium">✓ Completed</span>
+                                </div>
+                                <p class="text-sm text-gray-600 ml-9">Extract complete Google AI summaries and all citation sources using SerpAPI for data integrity</p>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4 border-l-4 border-green-500">
+                                <div class="flex items-center mb-2">
+                                    <span class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">2</span>
+                                    <span class="font-semibold text-gray-800">User Page Crawling</span>
+                                    <span class="ml-auto text-sm text-green-600 font-medium">✓ Completed</span>
+                                </div>
+                                <p class="text-sm text-gray-600 ml-9">Deep analysis of your webpage content structure, keyword density, and expertise performance</p>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4 border-l-4 border-purple-500">
+                                <div class="flex items-center mb-2">
+                                    <span class="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">3</span>
+                                    <span class="font-semibold text-gray-800">Competitor Crawling</span>
+                                    <span class="ml-auto text-sm text-yellow-600 font-medium">⚡ Processing</span>
+                                </div>
+                                <p class="text-sm text-gray-600 ml-9">Batch crawl 10-15 cited websites for E-E-A-T evaluation and content comparison</p>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4 border-l-4 border-orange-500">
+                                <div class="flex items-center mb-2">
+                                    <span class="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">4</span>
+                                    <span class="font-semibold text-gray-800">AI Analysis</span>
+                                    <span class="ml-auto text-sm text-green-600 font-medium">✓ Completed</span>
+                                </div>
+                                <p class="text-sm text-gray-600 ml-9">Gemini 2.5 Flash deep analysis, generating P1-P3 priority improvement strategies</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 100-Point Scoring System -->
+                    <div>
+                        <h4 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                            <svg class="w-6 h-6 text-purple-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            100-Point Standardized Scoring System
+                        </h4>
+
+                        <div class="space-y-4">
+                            <div class="bg-white rounded-lg p-4">
+                                <div class="flex justify-between items-center mb-3">
+                                    <span class="text-sm font-semibold text-gray-700">Overall Quality Assessment</span>
+                                    <div class="flex items-center">
+                                        <div class="w-24 bg-gray-200 rounded-full h-3 mr-3">
+                                            <div class="bg-green-500 h-3 rounded-full" style="width: 100%"></div>
+                                        </div>
+                                        <span class="text-lg font-bold text-green-600">100 pts</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600">Based on 4/4 step completion rate</p>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4">
+                                <h5 class="font-semibold text-gray-800 mb-3">Score Composition Structure</h5>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Data Completeness</span>
+                                        <span class="font-medium text-blue-600">25%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Analysis Depth</span>
+                                        <span class="font-medium text-green-600">30%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Competitor Coverage</span>
+                                        <span class="font-medium text-purple-600">25%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Strategy Actionability</span>
+                                        <span class="font-medium text-orange-600">20%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4">
+                                <h5 class="font-semibold text-gray-800 mb-3">Quality Control Checkpoints</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li class="flex items-center">
+                                        <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span class="text-gray-700">AI Overview data integrity verification</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span class="text-gray-700">Competitor website validity check</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span class="text-gray-700">E-E-A-T scoring standardization verification</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span class="text-gray-700">Improvement recommendation practicality assessment</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quality Guarantee -->
+                <div class="mt-8 bg-white rounded-xl p-6 border border-indigo-200">
+                    <div class="text-center">
+                        <h5 class="text-lg font-bold text-indigo-900 mb-3">Our Quality Commitment</h5>
+                        <div class="grid md:grid-cols-3 gap-4 text-sm">
+                            <div class="flex items-center justify-center">
+                                <svg class="w-5 h-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                                <span class="text-indigo-800"><strong>100% Data Authenticity</strong></span>
+                            </div>
+                            <div class="flex items-center justify-center">
+                                <svg class="w-5 h-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                <span class="text-indigo-800"><strong>15-Second Lightning Analysis</strong></span>
+                            </div>
+                            <div class="flex items-center justify-center">
+                                <svg class="w-5 h-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="text-indigo-800"><strong>94.7% Accuracy Guarantee</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Input Requirements Section -->
+    <section class="section-padding bg-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    Input Requirements & Analysis Scope
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Simply provide two pieces of information, and our system automatically completes comprehensive analysis
+                </p>
+            </div>
+
+            <div class="max-w-4xl mx-auto">
+                <div class="grid md:grid-cols-2 gap-8 mb-12">
+                    <!-- Required Input -->
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-100">
+                        <h3 class="text-xl font-bold text-blue-900 mb-6 flex items-center">
+                            <svg class="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                            </svg>
+                            Information You Need to Provide
+                        </h3>
+                        
+                        <div class="space-y-6">
+                            <div class="bg-white rounded-lg p-4 border border-blue-200">
+                                <div class="flex items-center mb-2">
+                                    <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">1</span>
+                                    <span class="font-semibold text-blue-800">Target Keyword</span>
+                                    <span class="ml-2 text-red-500">*</span>
+                                </div>
+                                <p class="text-sm text-blue-700 mb-2">The core keyword you want to analyze</p>
+                                <div class="bg-blue-50 rounded px-3 py-2 text-sm text-blue-800 font-mono">
+                                    Example: how to eliminate bathroom flies
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4 border border-blue-200">
+                                <div class="flex items-center mb-2">
+                                    <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">2</span>
+                                    <span class="font-semibold text-blue-800">Your Website URL</span>
+                                    <span class="ml-2 text-red-500">*</span>
+                                </div>
+                                <p class="text-sm text-blue-700 mb-2">The existing article URL you want to optimize</p>
+                                <div class="bg-blue-50 rounded px-3 py-2 text-sm text-blue-800 font-mono">
+                                    Example: https://yoursite.com/article
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 bg-blue-100 rounded-lg p-3">
+                            <p class="text-sm text-blue-800">
+                                <span class="font-semibold">That's it!</span>
+                                You only need to provide these two basic pieces of information, and our system will automatically handle all complex analysis work.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Automated Analysis -->
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-8 border border-green-100">
+                        <h3 class="text-xl font-bold text-green-900 mb-6 flex items-center">
+                            <svg class="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            Automated Analysis Scope
+                        </h3>
+
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <span class="font-semibold text-green-800">Complete AI Overview Deconstruction</span>
+                                    <p class="text-sm text-green-700">Automatically extract Google AI summary content and all citation sources</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <span class="font-semibold text-green-800">Batch Competitor Analysis</span>
+                                    <p class="text-sm text-green-700">Crawl 10-15 cited websites' complete content for comparison</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <span class="font-semibold text-green-800">Multi-Dimensional E-E-A-T Evaluation</span>
+                                    <p class="text-sm text-green-700">Four-dimensional scoring: Experience, Expertise, Authoritativeness, Trustworthiness</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <span class="font-semibold text-green-800">Deep Keyword Intent Analysis</span>
+                                    <p class="text-sm text-green-700">User search intent classification and demand weight calculation</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <span class="font-semibold text-green-800">Precise Content Gap Diagnosis</span>
+                                    <p class="text-sm text-green-700">Identify specific differences between your content and top competitors</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <span class="font-semibold text-green-800">P1-P3 Priority Strategy</span>
+                                    <p class="text-sm text-green-700">Impact × Execution Difficulty matrix for actionable improvement plans</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Depth Comparison -->
+                <div class="bg-gray-50 rounded-2xl p-8">
+                    <h3 class="text-2xl font-bold text-center mb-8">Analysis Depth Comparison</h3>
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="text-center">
+                            <div class="bg-red-100 rounded-lg p-4 mb-4">
+                                <h4 class="font-semibold text-red-800 mb-2">❌ Generic Tools</h4>
+                                <ul class="text-sm text-red-700 space-y-1">
+                                    <li>Basic keyword analysis only</li>
+                                    <li>Surface-level competitor comparison</li>
+                                    <li>No AI Overview insights</li>
+                                    <li>No specific action recommendations</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-yellow-100 rounded-lg p-4 mb-4">
+                                <h4 class="font-semibold text-yellow-800 mb-2">⚠️ Manual Analysis</h4>
+                                <ul class="text-sm text-yellow-700 space-y-1">
+                                    <li>Takes 3-5 hours</li>
+                                    <li>Easy to miss key information</li>
+                                    <li>Subjective judgment bias</li>
+                                    <li>Cannot quantify evaluation</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-green-100 rounded-lg p-4 mb-4">
+                                <h4 class="font-semibold text-green-800 mb-2">✅ Our System</h4>
+                                <ul class="text-sm text-green-700 space-y-1">
+                                    <li>Complete AI Overview reverse analysis</li>
+                                    <li>13+ competitor deep comparison</li>
+                                    <li>Standardized E-E-A-T evaluation</li>
+                                    <li>P1-P3 actionable strategies</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Case Study Section -->
+    <section id="demo" class="section-padding">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    Complete Analysis Report Example
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Using "how to eliminate bathroom flies" as an example, showcasing our deep analysis capabilities and specific improvement recommendations
+                </p>
+            </div>
+
+            <!-- Input Example -->
+            <div class="max-w-2xl mx-auto mb-12 bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold mb-4 text-center">Analysis Input Example</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Target Keyword</label>
+                        <div class="bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-gray-700">
+                            how to eliminate bathroom flies
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Your Website URL</label>
+                        <div class="bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm">
+                            https://pestcontrolpro.com/drain-fly-control-guide...
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
+                        <p class="text-sm text-blue-700">
+                            <span class="font-medium">Automatic Competitor Analysis:</span>
+                            System will automatically extract and deeply analyze 13 citation sources from Google AI Overview
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Results -->
+            <div class="max-w-6xl mx-auto">
+                <div class="flex flex-wrap justify-center gap-2 mb-8">
+                    <button class="tab-btn px-6 py-2 rounded-lg font-medium transition" data-tab="overview">AI Overview Breakdown</button>
+                    <button class="tab-btn px-6 py-2 rounded-lg font-medium transition" data-tab="competitors">Competitor Analysis</button>
+                    <button class="tab-btn px-6 py-2 rounded-lg font-medium transition" data-tab="gaps">Content Gap Diagnosis</button>
+                    <button class="tab-btn px-6 py-2 rounded-lg font-medium transition" data-tab="strategy">Strategic Improvement Plan</button>
+                    <button class="tab-btn px-6 py-2 rounded-lg font-medium transition" data-tab="intent">Keyword Intent</button>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <!-- AI Overview Analysis -->
+                    <div id="tab-overview" class="tab-content">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-bold">📊 Google AI Overview Complete Breakdown</h3>
+                            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">13 Citation Sources</span>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                            <h4 class="font-semibold mb-3">AI Summary Content Analysis</h4>
+                            <p class="text-gray-700 text-sm leading-relaxed">
+                                Bathroom small flies (usually drain flies) control focuses on <strong>environmental cleaning and drying</strong>, combined with physical or chemical methods to eliminate adults and larvae.
+                                Google AI's strategy covers four major aspects: environmental management, physical control, chemical control, and other auxiliary methods,
+                                emphasizing <strong>maintaining dryness and regular drain cleaning</strong> to reduce breeding sources.
+                            </p>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="font-semibold mb-3">🎯 Core Strategy Focus</h4>
+                                <ul class="space-y-2 text-sm">
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">✓</span>
+                                        <span><strong>Environmental Cleaning:</strong> Regular drain cleaning, avoid standing water</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">✓</span>
+                                        <span><strong>Physical Control:</strong> Drain covers, fly swatters, vacuum cleaners</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">✓</span>
+                                        <span><strong>Chemical Methods:</strong> Diluted bleach, natural essential oils</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">✓</span>
+                                        <span><strong>Home Remedies:</strong> Hot water rinse, baking soda and vinegar</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold mb-3">📈 Citation Source Distribution</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span>Health & Medical Websites</span>
+                                        <span class="font-medium">38%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Professional Pest Control</span>
+                                        <span class="font-medium">31%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>News Media</span>
+                                        <span class="font-medium">23%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Personal Experience Sharing</span>
+                                        <span class="font-medium">8%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Competitor Analysis -->
+                    <div id="tab-competitors" class="tab-content hidden">
+                        <h3 class="text-xl font-bold mb-6">🔗 Competitor E-E-A-T Evaluation</h3>
+                        
+                        <div class="space-y-6">
+                            <!-- Top Competitor -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h4 class="font-semibold">webmd.com</h4>
+                                        <p class="text-sm text-gray-600">WebMD Health Network - Rank #1</p>
+                                    </div>
+                                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">High Authority</span>
+                                </div>
+                                <div class="grid grid-cols-4 gap-4 text-center text-sm">
+                                    <div>
+                                        <div class="text-lg font-bold text-blue-600">89%</div>
+                                        <div class="text-xs text-gray-500">Experience</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-green-600">95%</div>
+                                        <div class="text-xs text-gray-500">Expertise</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-purple-600">98%</div>
+                                        <div class="text-xs text-gray-500">Authority</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-orange-600">96%</div>
+                                        <div class="text-xs text-gray-500">Trust</div>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600 mt-2">
+                                    <strong>Success Factors:</strong> Leading medical authority, cites CDC and health department guidelines, medical expert reviews
+                                </p>
+                            </div>
+
+                            <!-- Second Competitor -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h4 class="font-semibold">terminix.com</h4>
+                                        <p class="text-sm text-gray-600">Terminix Pest Control - Rank #2</p>
+                                    </div>
+                                    <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">Medium Authority</span>
+                                </div>
+                                <div class="grid grid-cols-4 gap-4 text-center text-sm">
+                                    <div>
+                                        <div class="text-lg font-bold text-blue-600">92%</div>
+                                        <div class="text-xs text-gray-500">Experience</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-green-600">88%</div>
+                                        <div class="text-xs text-gray-500">Expertise</div>
+                                    </div>
+                                    <div class="text-lg font-bold text-purple-600">85%</div>
+                                        <div class="text-xs text-gray-500">Authority</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-orange-600">90%</div>
+                                        <div class="text-xs text-gray-500">Trust</div>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600 mt-2">
+                                    <strong>Success Factors:</strong> Professional pest control company, decades of experience, industry certifications
+                                </p>
+                            </div>
+
+                            <!-- Your Site Comparison -->
+                            <div class="border-2 border-orange-200 rounded-lg p-4 bg-orange-50">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h4 class="font-semibold">Your Website (pestcontrolpro.com)</h4>
+                                        <p class="text-sm text-gray-600">Pest Control Pro - Currently Not Cited</p>
+                                    </div>
+                                    <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">Needs Optimization</span>
+                                </div>
+                                <div class="grid grid-cols-4 gap-4 text-center text-sm">
+                                    <div>
+                                        <div class="text-lg font-bold text-blue-600">85%</div>
+                                        <div class="text-xs text-gray-500">Experience</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-green-600">82%</div>
+                                        <div class="text-xs text-gray-500">Expertise</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-purple-600">68%</div>
+                                        <div class="text-xs text-gray-500">Authority</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-orange-600">74%</div>
+                                        <div class="text-xs text-gray-500">Trust</div>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600 mt-2">
+                                    <strong>Improvement Opportunities:</strong> Enhance authority and trustworthiness, need professional credentials and third-party citations
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Gaps -->
+                    <div id="tab-gaps" class="tab-content hidden">
+                        <h3 class="text-xl font-bold mb-6">🔍 Precise Content Gap Diagnosis</h3>
+                        
+                        <div class="space-y-6">
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <h4 class="font-semibold text-red-800 mb-3">🚨 Critical Missing Content</h4>
+                                <ul class="space-y-2 text-sm">
+                                    <li class="flex items-start">
+                                        <span class="text-red-500 mr-2">⚠️</span>
+                                        <span><strong>Health Impact Insufficient:</strong> Missing specific allergy symptoms and respiratory issues explanation</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-red-500 mr-2">⚠️</span>
+                                        <span><strong>Physical Control Details Lacking:</strong> Drain covers, vacuum techniques application scenarios not detailed</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-red-500 mr-2">⚠️</span>
+                                        <span><strong>Home Remedy Instructions Brief:</strong> Hot water, baking soda and vinegar specific ratios and operation steps</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <h4 class="font-semibold text-yellow-800 mb-3">💡 Optimization Opportunities</h4>
+                                <ul class="space-y-2 text-sm">
+                                    <li class="flex items-start">
+                                        <span class="text-yellow-600 mr-2">🎯</span>
+                                        <span><strong>Chemical Control Expansion:</strong> Broader introduction to different pesticide types and applicability limitations</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-yellow-600 mr-2">🎯</span>
+                                        <span><strong>Missing Comparison Tables:</strong> Pros and cons comparison of different control methods and applicable scenarios</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-yellow-600 mr-2">🎯</span>
+                                        <span><strong>FAQ Expansion Opportunities:</strong> Do drain flies bite, reproduction speed, and other common concerns</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <h4 class="font-semibold text-green-800 mb-3">✅ Existing Strengths</h4>
+                                <ul class="space-y-2 text-sm">
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">✓</span>
+                                        <span><strong>Professional Pest Control Background:</strong> Practical experience enhances content authority</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">✓</span>
+                                        <span><strong>Specific Product Recommendations:</strong> Detailed usage methods and effectiveness descriptions for professional products</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">✓</span>
+                                        <span><strong>Clear Content Structure:</strong> Complete control spectrum from natural to professional methods</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Strategy Plan -->
+                    <div id="tab-strategy" class="tab-content hidden">
+                        <h3 class="text-xl font-bold mb-6">🎯 Strategic Improvement Plan</h3>
+                        
+                        <div class="space-y-6">
+                            <!-- P1 Priority -->
+                            <div class="border-l-4 border-red-500 bg-red-50 p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-bold text-red-800">P1 - Immediate Execution</h4>
+                                    <span class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-medium">High Impact × Low Execution Difficulty</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="bg-white rounded p-3">
+                                        <h5 class="font-semibold text-sm mb-1">Expand "Drain Fly Prevention FAQ" Section</h5>
+                                        <p class="text-xs text-gray-600 mb-2">Add common questions about whether drain flies bite, method applicability, etc.</p>
+                                        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Expected Traffic Increase: +15%</span>
+                                    </div>
+                                    <div class="bg-white rounded p-3">
+                                        <h5 class="font-semibold text-sm mb-1">Enhance "Physical Control Methods" Detail Description</h5>
+                                        <p class="text-xs text-gray-600 mb-2">Clarify specific usage timing and operation for various tools</p>
+                                        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Expected Traffic Increase: +12%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- P2 Priority -->
+                            <div class="border-l-4 border-yellow-500 bg-yellow-50 p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-bold text-yellow-800">P2 - Medium-term Planning</h4>
+                                    <span class="bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-medium">High Impact × High Execution Difficulty</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="bg-white rounded p-3">
+                                        <h5 class="font-semibold text-sm mb-1">Strengthen "Drain Fly Health Risks" Depth</h5>
+                                        <p class="text-xs text-gray-600 mb-2">Add specific health risks, cite research to improve E-E-A-T</p>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Execution Timeline: 2-3 weeks</span>
+                                    </div>
+                                    <div class="bg-white rounded p-3">
+                                        <h5 class="font-semibold text-sm mb-1">Expand "Home Remedies" Content Details</h5>
+                                        <p class="text-xs text-gray-600 mb-2">Detailed operation steps, ratio formulas, and precautions</p>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Execution Timeline: 1-2 weeks</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- P3 Priority -->
+                            <div class="border-l-4 border-blue-500 bg-blue-50 p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-bold text-blue-800">P3 - Long-term Optimization</h4>
+                                    <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-medium">Ongoing</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="bg-white rounded p-3">
+                                        <h5 class="font-semibold text-sm mb-1">Add "Professional Pest Control Service Guide"</h5>
+                                        <p class="text-xs text-gray-600 mb-2">Clearly list situations requiring professional help and judgment criteria</p>
+                                        <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">Brand Value Enhancement</span>
+                                    </div>
+                                    <div class="bg-white rounded p-3">
+                                        <h5 class="font-semibold text-sm mb-1">Optimize Website E-E-A-T Signals</h5>
+                                        <p class="text-xs text-gray-600 mb-2">Add professional credentials, company certifications, service area displays</p>
+                                        <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">Authority Strengthening</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Keyword Intent -->
+                    <div id="tab-intent" class="tab-content hidden">
+                        <h3 class="text-xl font-bold mb-6">🎯 Deep Keyword Intent Analysis</h3>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="font-semibold mb-4">🎯 Core Search Intent</h4>
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                                    <h5 class="font-semibold text-blue-800 mb-2">Informational</h5>
+                                    <p class="text-sm text-blue-700">
+                                        Users primarily seek solutions and operation guides, wanting to understand effective control methods
+                                    </p>
+                                </div>
+
+                                <h4 class="font-semibold mb-3">🔍 Potential Search Intents</h4>
+                                <ul class="space-y-2 text-sm">
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">•</span>
+                                        <span>Seeking operation methods (how to eliminate, steps)</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">•</span>
+                                        <span>Understanding related health impacts</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">•</span>
+                                        <span>Finding best practices (natural, chemical, physical control)</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">•</span>
+                                        <span>Exploring pros and cons (different method advantages/disadvantages)</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">•</span>
+                                        <span>Seeking expert experience (real cases, product recommendations)</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h4 class="font-semibold mb-4">📊 User Demand Weight Analysis</h4>
+                                <div class="space-y-3">
+                                    <div>
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-sm">Operation Methods Demand</span>
+                                            <span class="text-sm font-medium">85%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-blue-500 h-2 rounded-full" style="width: 85%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-sm">Safety Concerns</span>
+                                            <span class="text-sm font-medium">72%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-green-500 h-2 rounded-full" style="width: 72%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-sm">Effectiveness Comparison</span>
+                                            <span class="text-sm font-medium">68%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-yellow-500 h-2 rounded-full" style="width: 68%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-sm">Product Recommendations</span>
+                                            <span class="text-sm font-medium">55%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-purple-500 h-2 rounded-full" style="width: 55%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 bg-gray-50 rounded-lg p-4">
+                                    <h5 class="font-semibold text-sm mb-2">💡 Content Strategy Recommendations</h5>
+                                    <p class="text-xs text-gray-600">
+                                        Based on intent analysis, prioritize strengthening <strong>specific operation methods</strong> and <strong>safety precautions</strong>,
+                                        followed by supplementing <strong>effectiveness comparison</strong> content, and moderately adding <strong>product recommendations</strong>.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section id="cta" class="section-padding bg-gradient-to-r from-primary to-primary-dark text-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">
+                Ready to Stand Out in the AI Era?
+            </h2>
+            <p class="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
+                Start using our content gap analyzer today and make your content the preferred citation source for AI Overview
+            </p>
+            <div class="flex justify-center">
+                <a href="https://forms.gle/v1rxZwykEXDDA9fx5" target="_blank" class="inline-flex items-center justify-center px-12 py-5 text-lg font-bold rounded-lg text-white transition transform hover:scale-105 shadow-2xl" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);">
+                    Start Free Trial
+                    <svg class="ml-3 -mr-1 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-300">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="text-center">
+                <h3 class="text-xl font-semibold text-white mb-4">Ohya Digital Co., Ltd.</h3>
+                <p class="text-gray-400 mb-6 max-w-2xl mx-auto">
+                    This project is created by Ohya Digital Co., Ltd., dedicated to providing clear direction for your SEO strategy.
+                    For deeper analysis or consultation services, please contact us.
+                </p>
+                <div class="flex justify-center space-x-6">
+                    <a href="mailto:gary@ohya.co" class="hover:text-white transition">
+                        <span>Email: gary@ohya.co</span>
+                    </a>
+                    <span class="text-gray-600">|</span>
+                    <a href="https://www.threads.com/@ohya.studio" target="_blank" class="hover:text-white transition">
+                        <span>Threads: @ohya.studio</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Chart.js - Doughnut Chart
+        const ctx = document.getElementById('successChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [94.7, 5.3],
+                    backgroundColor: [
+                        '#10b981',
+                        '#e5e7eb'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: false
+                    }
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: false,
+                    duration: 1500
+                }
+            }
+        });
+
+        // Tab functionality
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabBtns.forEach((btn, index) => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('tab-active', 'bg-primary', 'text-white'));
+                tabBtns.forEach(b => b.classList.add('bg-gray-200', 'text-gray-700'));
+                tabContents.forEach(c => c.classList.add('hidden'));
+                
+                btn.classList.remove('bg-gray-200', 'text-gray-700');
+                btn.classList.add('tab-active', 'bg-primary', 'text-white');
+                document.getElementById(`tab-${btn.dataset.tab}`).classList.remove('hidden');
+            });
+        });
+
+        // Initialize first tab
+        tabBtns[0].click();
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

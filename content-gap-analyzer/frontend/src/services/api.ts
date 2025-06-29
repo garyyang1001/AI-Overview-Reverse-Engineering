@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { AnalysisRequest, AnalysisResult, StartAnalysisResponse, JobStatus } from '../types';
+import { AnalysisRequest, AnalysisReportWithMetadata, StartAnalysisResponse, JobStatus } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3002/api';
 
@@ -117,14 +117,14 @@ export const analysisApi = {
     return analysisApi.getJobStatus(analysisId);
   },
   
-  getAnalysisResult: async (analysisId: string): Promise<AnalysisResult> => {
+  getAnalysisResult: async (analysisId: string): Promise<AnalysisReportWithMetadata> => {
     try {
       console.log(`📋 Getting analysis result for: ${analysisId}`);
       const jobStatus = await analysisApi.getJobStatus(analysisId);
       
       if (jobStatus.data) {
         console.log('✅ Analysis result retrieved successfully');
-        return jobStatus.data;
+        return jobStatus.data as AnalysisReportWithMetadata;
       }
       
       console.error('❌ Analysis result not available:', {

@@ -4,15 +4,15 @@
  */
 
 import logger from '../utils/logger';
-import { promptService } from './promptService';
-import { contentRefinementService } from './contentRefinementService';
-import { openaiService } from './geminiService';
+// import { promptService } from './promptService'; // Not used anymore
+// import { contentRefinementService } from './contentRefinementService'; // Service removed
+import { geminiService } from './geminiService';
 import { goldenTestSet, GoldenTestCase } from '../tests/goldenTestSet';
 
 export interface TestResult {
   testCaseId: string;
   testName: string;
-  category: 'content_refinement' | 'main_analysis';
+  category: 'main_analysis';
   success: boolean;
   score: number;
   output: any;
@@ -113,11 +113,8 @@ class TestingService {
       let success = false;
       let score = 0;
       
-      if (testCase.category === 'content_refinement') {
-        output = await this.testContentRefinement(testCase);
-      } else {
-        output = await this.testMainAnalysis(testCase);
-      }
+      // v6.0: Only main_analysis category is supported
+      output = await this.testMainAnalysis(testCase);
       
       const endTime = Date.now();
       const executionTime = endTime - startTime;
@@ -174,21 +171,7 @@ class TestingService {
     }
   }
 
-  /**
-   * 測試內容精煉功能
-   */
-  private async testContentRefinement(testCase: GoldenTestCase): Promise<any> {
-    const prompt = promptService.renderPrompt('content_refinement', testCase.input);
-    
-    if (!prompt) {
-      throw new Error('Failed to render content refinement prompt');
-    }
-    
-    // 模擬實際調用流程
-    const result = await contentRefinementService.refineChunkPublic(testCase.input.content);
-    // Return just the content string for evaluation
-    return result.success ? result.content : '';
-  }
+  // testContentRefinement method removed in v6.0 as content refinement is no longer supported
 
   /**
    * 測試主分析功能
@@ -199,7 +182,7 @@ class TestingService {
     const userPageData = JSON.parse(testCase.input.userPage);
     const competitorPagesData = JSON.parse(testCase.input.competitorPages);
     
-    const openaiInput = {
+    const geminiInput = {
       targetKeyword: analysisData.targetKeyword,
       userPage: {
         url: userPageData.url,
@@ -219,7 +202,7 @@ class TestingService {
       jobId: `test_${testCase.id}`
     };
     
-    return await openaiService.analyzeContentGap(openaiInput);
+    return await geminiService.analyzeContentGap(geminiInput);
   }
 
   /**
@@ -253,69 +236,19 @@ class TestingService {
       score -= 0.2;
     }
     
-    // 檢查必需元素
+    // 檢查必需元素 (v6.0 main analysis format)
     for (const requiredElement of testCase.qualityMetrics.requiredElements) {
-      if (testCase.category === 'content_refinement') {
-        // 對於內容精煉，檢查輸出格式和內容
-        if (requiredElement === 'bullet points format' && outputText.includes('-')) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'statistics or data points' && /\d+[\%\$]?/.test(outputText)) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'specific product names or tools' && 
-                  (outputLower.includes('semrush') || outputLower.includes('ahrefs') || outputLower.includes('google'))) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'actionable recommendations' && 
-                  (outputLower.includes('optimize') || outputLower.includes('implement') || outputLower.includes('create'))) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'specific metrics and formulas' && 
-                  (outputLower.includes('cac') || outputLower.includes('clv') || outputLower.includes('mrr') || outputLower.includes('公式'))) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'company names and examples' && 
-                  (outputLower.includes('salesforce') || outputLower.includes('hubspot') || outputLower.includes('intercom'))) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'numerical benchmarks' && 
-                  /\$\d+/.test(outputText)) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'industry data' && 
-                  (outputLower.includes('b2b') || outputLower.includes('b2c') || outputLower.includes('enterprise') || outputLower.includes('基準'))) {
-          requiredElementsFound++;
-        }
-      } else {
-        // 對於主分析，檢查 JSON 結構 (Claude.md format)
-        if (requiredElement === 'executiveSummary with confidence score' && 
-            output.strategyAndPlan && output.strategyAndPlan.p1_immediate && output.strategyAndPlan.p1_immediate.length > 0) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'eatAnalysis with scores' && 
-                  output.citedSourceAnalysis && output.citedSourceAnalysis.length > 0 && 
-                  output.citedSourceAnalysis[0].eeatAnalysis) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'contentGapAnalysis with specific gaps' && 
-                  output.websiteAssessment && output.websiteAssessment.contentGaps && output.websiteAssessment.contentGaps.length > 0) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'actionablePlan with timeline' && 
-                  output.strategyAndPlan && (output.strategyAndPlan.p1_immediate || output.strategyAndPlan.p2_mediumTerm || output.strategyAndPlan.p3_longTerm)) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'competitorInsights' && output.citedSourceAnalysis && output.citedSourceAnalysis.length > 0) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'detailed E-E-A-T analysis' && 
-                  output.citedSourceAnalysis && output.citedSourceAnalysis.length > 0 && 
-                  output.citedSourceAnalysis[0].eeatAnalysis && 
-                  Object.keys(output.citedSourceAnalysis[0].eeatAnalysis).length === 4) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'specific competitor advantages' && 
-                  output.citedSourceAnalysis && output.citedSourceAnalysis.some((source: any) => 
-                    source.contribution && source.contribution.length > 50)) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'actionable improvement plan' && 
-                  output.strategyAndPlan && 
-                  (output.strategyAndPlan.p1_immediate?.length > 0 || 
-                   output.strategyAndPlan.p2_mediumTerm?.length > 0 || 
-                   output.strategyAndPlan.p3_longTerm?.length > 0)) {
-          requiredElementsFound++;
-        } else if (requiredElement === 'success metrics definition' && 
-                  output.reportFooter && output.reportFooter.length > 50) {
-          requiredElementsFound++;
-        }
+      // Check for main analysis required elements in v6.0 JSON format
+      if (requiredElement === 'strategyAndPlan' && outputLower.includes('strategyandplan')) {
+        requiredElementsFound++;
+      } else if (requiredElement === 'keywordIntent' && outputLower.includes('keywordintent')) {
+        requiredElementsFound++;
+      } else if (requiredElement === 'aiOverviewAnalysis' && outputLower.includes('aioverviewanalysis')) {
+        requiredElementsFound++;
+      } else if (requiredElement === 'citedSourceAnalysis' && outputLower.includes('citedsourceanalysis')) {
+        requiredElementsFound++;
+      } else if (requiredElement === 'websiteAssessment' && outputLower.includes('websiteassessment')) {
+        requiredElementsFound++;
       }
     }
     
@@ -367,7 +300,8 @@ class TestingService {
     const byDifficulty: Record<string, { passed: number; failed: number; avgScore: number }> = {};
     
     // 按類別統計
-    for (const category of ['content_refinement', 'main_analysis']) {
+    // v6.0: Only main_analysis category supported
+    for (const category of ['main_analysis']) {
       const categoryResults = results.filter(r => r.category === category);
       const passed = categoryResults.filter(r => r.success).length;
       const failed = categoryResults.length - passed;
@@ -395,8 +329,9 @@ class TestingService {
   /**
    * 執行特定類別的測試
    */
-  async runCategoryTests(category: 'content_refinement' | 'main_analysis'): Promise<TestResult[]> {
-    const testCases = goldenTestSet.getTestCasesByCategory(category);
+  async runCategoryTests(category: 'main_analysis'): Promise<TestResult[]> {
+    // v6.0: getTestCasesByCategory() no longer takes parameters
+    const testCases = goldenTestSet.getTestCasesByCategory();
     const results: TestResult[] = [];
     
     logger.info(`Running ${category} tests (${testCases.length} cases)`);

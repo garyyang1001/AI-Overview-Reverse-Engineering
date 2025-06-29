@@ -12,7 +12,7 @@ import logger from '../utils/logger';
 dotenv.config();
 
 interface CLIOptions {
-  category?: 'content_refinement' | 'main_analysis';
+  category?: 'main_analysis';
   testId?: string;
   full?: boolean;
   report?: boolean;
@@ -26,7 +26,7 @@ async function main() {
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
       case '--category':
-        options.category = args[++i] as 'content_refinement' | 'main_analysis';
+        options.category = args[++i] as 'main_analysis';
         break;
       case '--test-id':
         options.testId = args[++i];
@@ -99,7 +99,7 @@ async function runSingleTest(testId: string) {
   console.log(`   輸出長度: ${result.metrics.outputLength} 字符`);
 }
 
-async function runCategoryTests(category: 'content_refinement' | 'main_analysis', generateReport: boolean = false) {
+async function runCategoryTests(category: 'main_analysis', generateReport: boolean = false) {
   console.log(`\n🧪 執行 ${category} 測試`);
   console.log('=' .repeat(50));
   
@@ -211,14 +211,14 @@ AIO-Auditor v5.1 測試執行工具
 
 選項:
   --full              執行完整測試套件
-  --category <type>   執行特定類別測試 (content_refinement|main_analysis)
+  --category <type>   執行特定類別測試 (main_analysis)
   --test-id <id>      執行單個測試案例
   --report            生成詳細報告
   --help              顯示此幫助信息
 
 例子:
   npm run test:golden --full --report
-  npm run test:golden --category content_refinement
+  npm run test:golden --category main_analysis
   npm run test:golden --test-id cr_001_ecommerce_seo
   npm run test:golden
 `);

@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { promptService } from '../services/promptService';
-import { openaiService } from '../services/geminiService';
+import { geminiService } from '../services/geminiService';
 
 async function debugAnalysis() {
   console.log('=== 開始調試分析流程 ===\n');
@@ -76,7 +76,7 @@ async function debugAnalysis() {
     };
 
     console.log('發送測試請求到 OpenAI...');
-    const result = await openaiService.analyzeContentGap(testInput);
+    const result = await geminiService.analyzeContentGap(testInput);
     
     console.log('✅ OpenAI API 調用成功');
     console.log('返回結果類型:', typeof result);

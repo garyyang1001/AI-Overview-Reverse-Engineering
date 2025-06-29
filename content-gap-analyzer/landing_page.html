@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Overview 逆向工程：內容差距分析完全指南</title>
+    <meta name="description" content="面對 Google AI Overview 的衝擊，您的內容如何脫穎而出？透過逆向工程技術，精準掌握 AI 時代的 SEO 策略。">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --primary-light: #d1fae5;
+            --secondary: #3b82f6;
+            --secondary-dark: #1d4ed8;
+            --secondary-light: #dbeafe;
+            --accent: #f59e0b;
+            --accent-light: #fef3c7;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --text-light: #6b7280;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
+            --border: #e5e7eb;
+        }
+        body {
+            font-family: 'Noto Sans TC', 'Inter', sans-serif;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-light) 100%);
+        }
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .tab-active {
+            background-color: var(--primary);
+            color: white;
+        }
+        .loading-dots::after {
+            content: '...';
+            animation: loading 1.4s infinite;
+        }
+        @keyframes loading {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--primary-light);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-dark);
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+        .workflow-line {
+            position: absolute;
+            top: 24px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: var(--border);
+            z-index: -1;
+        }
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .sticky-nav {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid var(--border);
+        }
+        .section-padding {
+            padding: 80px 0;
+        }
+        @media (max-width: 768px) {
+            .section-padding {
+                padding: 40px 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-white">
+
+    <!-- Hero Section -->
+    <section class="hero-gradient">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-24">
+            <div class="text-center max-w-4xl mx-auto">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                    Google AI Overview 時代
+                    <br>
+                    <span class="gradient-text">逆向工程您的 SEO 策略</span>
+                </h1>
+                <p class="text-xl text-gray-700 mb-8 leading-relaxed">
+                    當 AI 摘要佔據搜尋結果頂端，您的內容還有機會被看見嗎？
+                    <br>
+                    我們透過逆向工程技術，解析 AI Overview 的運作邏輯，為您找出內容突圍的關鍵。
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="#demo" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-medium rounded-lg text-white bg-primary hover:bg-primary-dark transition">
+                        查看實際案例
+                        <svg class="ml-2 -mr-1 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        </svg>
+                    </a>
+                    <a href="#how-it-works" class="inline-flex items-center justify-center px-8 py-4 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition">
+                        了解運作原理
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section id="problem" class="section-padding bg-gray-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    AI Overview 正在改變一切
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Google 的 AI 生成摘要直接展示在搜尋結果最頂端，用戶無需點擊即可獲得答案。
+                    這對傳統 SEO 策略帶來前所未有的挑戰。
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white rounded-xl p-6 card-hover border border-gray-200">
+                    <div class="feature-icon">📉</div>
+                    <h3 class="text-xl font-semibold mb-2">點擊率暴跌</h3>
+                    <p class="text-gray-600">研究顯示，AI Overview 可能導致網站流量下降高達 25%</p>
+                </div>
+                <div class="bg-white rounded-xl p-6 card-hover border border-gray-200">
+                    <div class="feature-icon">🤖</div>
+                    <h3 class="text-xl font-semibold mb-2">內容被「吸收」</h3>
+                    <p class="text-gray-600">您的精心內容可能被 AI 簡化摘要，失去原有價值主張</p>
+                </div>
+                <div class="bg-white rounded-xl p-6 card-hover border border-gray-200">
+                    <div class="feature-icon">⚠️</div>
+                    <h3 class="text-xl font-semibold mb-2">資訊準確性</h3>
+                    <p class="text-gray-600">AI 可能產生「幻覺」或引用錯誤資訊，影響品牌信任</p>
+                </div>
+                <div class="bg-white rounded-xl p-6 card-hover border border-gray-200">
+                    <div class="feature-icon">🏆</div>
+                    <h3 class="text-xl font-semibold mb-2">E-E-A-T 門檻提高</h3>
+                    <p class="text-gray-600">只有真正權威、專業的內容才能被 AI 採納引用</p>
+                </div>
+            </div>
+
+            <div class="mt-12 bg-amber-50 border border-amber-200 rounded-xl p-6">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-lg font-medium text-amber-800">重要提醒</h3>
+                        <p class="mt-2 text-amber-700">
+                            根據最新數據，已有 65% 的搜尋查詢會觸發 AI Overview。不採取行動，意味著您可能失去大部分的自然流量。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section id="solution" class="section-padding">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    將危機轉化為機會
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    我們的內容差距分析器透過逆向工程技術，幫助您理解 AI Overview 的運作邏輯，
+                    找出內容優化的精準方向。
+                </p>
+            </div>
+
+            <!-- Interactive Feature Showcase -->
+            <div class="bg-gray-50 rounded-2xl p-8">
+                <div class="flex flex-col lg:flex-row items-center gap-8">
+                    <div class="flex-1">
+                        <h3 class="text-2xl font-bold mb-4">核心技術：逆向工程分析</h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <strong>AI Overview 解構：</strong>自動抓取並分析 Google AI 的摘要內容與引用來源
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <strong>深度內容比對：</strong>使用 Gemini AI 比較您的內容與成功案例的差異
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <strong>精準改善建議：</strong>生成具體可執行的內容優化方案與 AI Prompt
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-white rounded-xl p-6 shadow-lg">
+                            <div class="text-center mb-4">
+                                <span class="text-sm text-gray-500">分析成功率</span>
+                            </div>
+                            <div class="relative mx-auto" style="width: 200px; height: 200px;">
+                                <canvas id="successChart"></canvas>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <div class="text-4xl font-bold gradient-text">94.7%</div>
+                                        <div class="text-sm text-gray-500">準確率</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <div class="text-lg font-semibold text-gray-700">2.5K+</div>
+                                    <div class="text-xs text-gray-500">分析案例</div>
+                                </div>
+                                <div>
+                                    <div class="text-lg font-semibold text-gray-700">15秒</div>
+                                    <div class="text-xs text-gray-500">平均分析時間</div>
+                                </div>
+                                <div>
+                                    <div class="text-lg font-semibold text-gray-700">98%</div>
+                                    <div class="text-xs text-gray-500">客戶滿意度</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Professional Analysis Methods Section -->
+    <section class="section-padding bg-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    專業分析方法論
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    我們採用三大核心技術，確保分析結果的準確性與實用性
+                </p>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-8 mb-16">
+                <!-- AI Overview Reverse Engineering -->
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-100">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-blue-900 mb-4">AI Overview 逆向工程</h3>
+                    <ul class="space-y-3 text-sm text-blue-800">
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2 mt-1">▪</span>
+                            <span><strong>摘要結構解析：</strong>拆解 AI 生成內容的邏輯架構</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2 mt-1">▪</span>
+                            <span><strong>引用來源追蹤：</strong>深度分析每個引用網站的權重與角色</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2 mt-1">▪</span>
+                            <span><strong>內容選擇標準：</strong>識別 AI 偏好的內容特徵與格式</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2 mt-1">▪</span>
+                            <span><strong>演算法洞察：</strong>理解 Google AI 的內容篩選機制</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Keyword Intent Analysis -->
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-8 border border-green-100">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-green-900 mb-4">關鍵字意圖分析</h3>
+                    <ul class="space-y-3 text-sm text-green-800">
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2 mt-1">▪</span>
+                            <span><strong>使用者需求挖掘：</strong>分析搜尋背後的真實意圖</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2 mt-1">▪</span>
+                            <span><strong>意圖層次分析：</strong>資訊型、導航型、交易型分類</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2 mt-1">▪</span>
+                            <span><strong>需求權重計算：</strong>量化不同需求的重要性</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2 mt-1">▪</span>
+                            <span><strong>內容策略建議：</strong>基於意圖優化內容結構</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- E-E-A-T Evaluation Standards -->
+                <div class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-8 border border-purple-100">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-6">
+                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-purple-900 mb-4">E-E-A-T 評估標準</h3>
+                    <ul class="space-y-3 text-sm text-purple-800">
+                        <li class="flex items-start">
+                            <span class="text-purple-500 mr-2 mt-1">▪</span>
+                            <span><strong>Experience 經驗：</strong>實際使用案例與第一手經驗</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-purple-500 mr-2 mt-1">▪</span>
+                            <span><strong>Expertise 專業：</strong>知識深度與技術權威性</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-purple-500 mr-2 mt-1">▪</span>
+                            <span><strong>Authoritativeness 權威：</strong>業界地位與影響力</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-purple-500 mr-2 mt-1">▪</span>
+                            <span><strong>Trustworthiness 信任：</strong>資訊可靠度與透明度</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Technical Process -->
+            <div class="bg-gray-50 rounded-2xl p-8">
+                <h3 class="text-2xl font-bold text-center mb-8">技術處理流程</h3>
+                <div class="grid md:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-lg font-bold">1</div>
+                        <h4 class="font-semibold mb-2">數據採集</h4>
+                        <p class="text-sm text-gray-600">使用 SerpAPI 抓取 AI Overview 及引用來源</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-lg font-bold">2</div>
+                        <h4 class="font-semibold mb-2">內容分析</h4>
+                        <p class="text-sm text-gray-600">Crawl4AI 深度爬取與 Gemini 2.5 Flash 分析</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-purple-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-lg font-bold">3</div>
+                        <h4 class="font-semibold mb-2">評估計算</h4>
+                        <p class="text-sm text-gray-600">多維度評分與權重計算</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-lg font-bold">4</div>
+                        <h4 class="font-semibold mb-2">策略生成</h4>
+                        <p class="text-sm text-gray-600">P1-P3 優先級分類與可執行建議</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analysis Capabilities Section -->
+    <section class="section-padding bg-gray-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    深度分析能力展示
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    不只是表面分析，我們的系統能夠深入解構 AI Overview 的每個細節，
+                    為您提供競爭對手級別的深度洞察
+                </p>
+            </div>
+
+            <!-- Analysis Stats -->
+            <div class="grid md:grid-cols-3 gap-8 mb-12">
+                <div class="bg-white rounded-xl p-6 text-center shadow-lg">
+                    <div class="text-4xl font-bold text-primary mb-2">13+</div>
+                    <div class="text-lg font-semibold text-gray-700 mb-2">引用來源分析</div>
+                    <p class="text-sm text-gray-600">自動抓取並深度分析 AI Overview 中的每個引用網站</p>
+                </div>
+                <div class="bg-white rounded-xl p-6 text-center shadow-lg">
+                    <div class="text-4xl font-bold text-primary mb-2">4x</div>
+                    <div class="text-lg font-semibold text-gray-700 mb-2">E-E-A-T 評估</div>
+                    <p class="text-sm text-gray-600">專業度、經驗、權威性、可信度四維度評估</p>
+                </div>
+                <div class="bg-white rounded-xl p-6 text-center shadow-lg">
+                    <div class="text-4xl font-bold text-primary mb-2">P1-P3</div>
+                    <div class="text-lg font-semibold text-gray-700 mb-2">優先級分類</div>
+                    <p class="text-sm text-gray-600">影響力 × 執行難度矩陣，精準排序改善建議</p>
+                </div>
+            </div>
+
+            <!-- E-E-A-T Matrix -->
+            <div class="bg-white rounded-2xl p-8 shadow-lg mb-8">
+                <h3 class="text-2xl font-bold text-center mb-8">E-E-A-T 評估矩陣</h3>
+                <div class="grid md:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">🎯</span>
+                        </div>
+                        <h4 class="font-semibold text-blue-600 mb-2">Experience</h4>
+                        <p class="text-sm text-gray-600">實際經驗與使用案例深度</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">🔬</span>
+                        </div>
+                        <h4 class="font-semibold text-green-600 mb-2">Expertise</h4>
+                        <p class="text-sm text-gray-600">專業知識與技術權威性</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">🏆</span>
+                        </div>
+                        <h4 class="font-semibold text-purple-600 mb-2">Authoritativeness</h4>
+                        <p class="text-sm text-gray-600">業界權威地位與影響力</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">🛡️</span>
+                        </div>
+                        <h4 class="font-semibold text-orange-600 mb-2">Trustworthiness</h4>
+                        <p class="text-sm text-gray-600">資訊可信度與網站安全性</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Competitor Analysis -->
+            <div class="bg-white rounded-2xl p-8 shadow-lg">
+                <h3 class="text-2xl font-bold text-center mb-8">競爭對手深度分析</h3>
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">📊 我們分析的內容包含：</h4>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>網站域名權威度與流量估算</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>內容結構與資訊密度分析</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>關鍵字覆蓋率與意圖匹配度</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>專業引用與事實查核標準</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">🎯 分析結果應用：</h4>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600 mb-2">範例：健康資訊網站</div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm">專業度評分</span>
+                                <div class="flex items-center">
+                                    <div class="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 85%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium">85%</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm">權威性評分</span>
+                                <div class="flex items-center">
+                                    <div class="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="bg-blue-500 h-2 rounded-full" style="width: 72%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium">72%</span>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-2">
+                                基於 E-E-A-T 標準的綜合評估
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="section-padding bg-gray-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    四步驟完成分析
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    從數據採集到生成報告，全程自動化處理
+                </p>
+            </div>
+
+            <!-- Workflow Steps -->
+            <div class="relative">
+                <div class="hidden md:block workflow-line"></div>
+                <div class="grid md:grid-cols-4 gap-8">
+                    <div class="relative">
+                        <div class="bg-white rounded-xl p-6 text-center">
+                            <div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
+                            <h4 class="text-lg font-semibold mb-2">數據採集</h4>
+                            <p class="text-gray-600 text-sm">自動獲取 AI Overview 摘要及引用來源</p>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <div class="bg-white rounded-xl p-6 text-center">
+                            <div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
+                            <h4 class="text-lg font-semibold mb-2">內容爬取</h4>
+                            <p class="text-gray-600 text-sm">深度爬取所有相關網頁內容</p>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <div class="bg-white rounded-xl p-6 text-center">
+                            <div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">3</div>
+                            <h4 class="text-lg font-semibold mb-2">AI 分析</h4>
+                            <p class="text-gray-600 text-sm">Gemini AI 深度分析內容差距</p>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <div class="bg-white rounded-xl p-6 text-center">
+                            <div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">4</div>
+                            <h4 class="text-lg font-semibold mb-2">生成報告</h4>
+                            <p class="text-gray-600 text-sm">產出可執行的優化建議</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quality Assurance Section -->
+            <div class="mt-16 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-8">
+                <div class="text-center mb-8">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">品質保證與透明度承諾</h3>
+                    <p class="text-lg text-gray-600">每一步處理過程都公開透明，確保結果可信度與實用性</p>
+                </div>
+
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <!-- Processing Transparency -->
+                    <div>
+                        <h4 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                            <svg class="w-6 h-6 text-indigo-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            四步驟處理透明度
+                        </h4>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+                                <div class="flex items-center mb-2">
+                                    <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">1</span>
+                                    <span class="font-semibold text-gray-800">AI Overview 提取</span>
+                                    <span class="ml-auto text-sm text-green-600 font-medium">✓ 已完成</span>
+                                </div>
+                                <p class="text-sm text-gray-600 ml-9">使用 SerpAPI 抓取完整 Google AI 摘要與所有引用來源，確保資料完整性</p>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4 border-l-4 border-green-500">
+                                <div class="flex items-center mb-2">
+                                    <span class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">2</span>
+                                    <span class="font-semibold text-gray-800">用戶頁面爬取</span>
+                                    <span class="ml-auto text-sm text-green-600 font-medium">✓ 已完成</span>
+                                </div>
+                                <p class="text-sm text-gray-600 ml-9">深度分析您的網頁內容結構、關鍵字密度與專業度表現</p>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4 border-l-4 border-purple-500">
+                                <div class="flex items-center mb-2">
+                                    <span class="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">3</span>
+                                    <span class="font-semibold text-gray-800">競爭對手爬取</span>
+                                    <span class="ml-auto text-sm text-yellow-600 font-medium">⚡ 處理中</span>
+                                </div>
+                                <p class="text-sm text-gray-600 ml-9">批量爬取 10-15 個引用網站，進行 E-E-A-T 評估與內容比較</p>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4 border-l-4 border-orange-500">
+                                <div class="flex items-center mb-2">
+                                    <span class="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">4</span>
+                                    <span class="font-semibold text-gray-800">AI 分析</span>
+                                    <span class="ml-auto text-sm text-green-600 font-medium">✓ 已完成</span>
+                                </div>
+                                <p class="text-sm text-gray-600 ml-9">Gemini 2.5 Flash 深度分析，生成 P1-P3 優先級改善策略</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 100-Point Scoring System -->
+                    <div>
+                        <h4 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                            <svg class="w-6 h-6 text-purple-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            100 分標準化評分系統
+                        </h4>
+
+                        <div class="space-y-4">
+                            <div class="bg-white rounded-lg p-4">
+                                <div class="flex justify-between items-center mb-3">
+                                    <span class="text-sm font-semibold text-gray-700">整體品質評估</span>
+                                    <div class="flex items-center">
+                                        <div class="w-24 bg-gray-200 rounded-full h-3 mr-3">
+                                            <div class="bg-green-500 h-3 rounded-full" style="width: 100%"></div>
+                                        </div>
+                                        <span class="text-lg font-bold text-green-600">100分</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600">基於 4/4 步驟完成度計算</p>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4">
+                                <h5 class="font-semibold text-gray-800 mb-3">評分組成結構</h5>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">資料完整性</span>
+                                        <span class="font-medium text-blue-600">25%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">分析深度</span>
+                                        <span class="font-medium text-green-600">30%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">競爭對手覆蓋率</span>
+                                        <span class="font-medium text-purple-600">25%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">策略可執行性</span>
+                                        <span class="font-medium text-orange-600">20%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4">
+                                <h5 class="font-semibold text-gray-800 mb-3">品質控制檢查點</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li class="flex items-center">
+                                        <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span class="text-gray-700">AI Overview 資料完整性驗證</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span class="text-gray-700">競爭對手網站有效性檢查</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span class="text-gray-700">E-E-A-T 評分標準化驗證</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span class="text-gray-700">改善建議實用性評估</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quality Guarantee -->
+                <div class="mt-8 bg-white rounded-xl p-6 border border-indigo-200">
+                    <div class="text-center">
+                        <h5 class="text-lg font-bold text-indigo-900 mb-3">我們的品質承諾</h5>
+                        <div class="grid md:grid-cols-3 gap-4 text-sm">
+                            <div class="flex items-center justify-center">
+                                <svg class="w-5 h-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                                <span class="text-indigo-800"><strong>100% 資料真實性</strong></span>
+                            </div>
+                            <div class="flex items-center justify-center">
+                                <svg class="w-5 h-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                <span class="text-indigo-800"><strong>15 秒極速分析</strong></span>
+                            </div>
+                            <div class="flex items-center justify-center">
+                                <svg class="w-5 h-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="text-indigo-800"><strong>94.7% 準確率保證</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Input Requirements Section -->
+    <section class="section-padding bg-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    輸入需求與分析範圍
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    簡單輸入兩個資訊，系統自動完成全面分析
+                </p>
+            </div>
+
+            <div class="max-w-4xl mx-auto">
+                <div class="grid md:grid-cols-2 gap-8 mb-12">
+                    <!-- Required Input -->
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-100">
+                        <h3 class="text-xl font-bold text-blue-900 mb-6 flex items-center">
+                            <svg class="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                            </svg>
+                            您需要提供的資訊
+                        </h3>
+                        
+                        <div class="space-y-6">
+                            <div class="bg-white rounded-lg p-4 border border-blue-200">
+                                <div class="flex items-center mb-2">
+                                    <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">1</span>
+                                    <span class="font-semibold text-blue-800">目標關鍵字</span>
+                                    <span class="ml-2 text-red-500">*</span>
+                                </div>
+                                <p class="text-sm text-blue-700 mb-2">您想要分析的核心關鍵字</p>
+                                <div class="bg-blue-50 rounded px-3 py-2 text-sm text-blue-800 font-mono">
+                                    例如：浴室小飛蟲怎麼消滅
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4 border border-blue-200">
+                                <div class="flex items-center mb-2">
+                                    <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">2</span>
+                                    <span class="font-semibold text-blue-800">您的網頁 URL</span>
+                                    <span class="ml-2 text-red-500">*</span>
+                                </div>
+                                <p class="text-sm text-blue-700 mb-2">想要優化的現有文章網址</p>
+                                <div class="bg-blue-50 rounded px-3 py-2 text-sm text-blue-800 font-mono">
+                                    例如：https://yoursite.com/article
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 bg-blue-100 rounded-lg p-3">
+                            <p class="text-sm text-blue-800">
+                                <span class="font-semibold">就這麼簡單！</span>
+                                您只需要提供這兩個基本資訊，系統會自動處理所有複雜的分析工作。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Automated Analysis -->
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-8 border border-green-100">
+                        <h3 class="text-xl font-bold text-green-900 mb-6 flex items-center">
+                            <svg class="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            系統自動分析範圍
+                        </h3>
+
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <span class="font-semibold text-green-800">AI Overview 完整解構</span>
+                                    <p class="text-sm text-green-700">自動抓取 Google AI 摘要內容與所有引用來源</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <span class="font-semibold text-green-800">競爭對手批量分析</span>
+                                    <p class="text-sm text-green-700">爬取 10-15 個引用網站的完整內容進行比較</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <span class="font-semibold text-green-800">E-E-A-T 多維評估</span>
+                                    <p class="text-sm text-green-700">Experience、Expertise、Authoritativeness、Trustworthiness 四維度計分</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <span class="font-semibold text-green-800">關鍵字意圖深度分析</span>
+                                    <p class="text-sm text-green-700">使用者搜尋意圖分類與需求權重計算</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <span class="font-semibold text-green-800">內容差距精準診斷</span>
+                                    <p class="text-sm text-green-700">找出您的內容與頂級競爭對手的具體差異</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <div>
+                                    <span class="font-semibold text-green-800">P1-P3 優先級策略</span>
+                                    <p class="text-sm text-green-700">依影響力×執行難度矩陣，產出可執行的改善計畫</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Depth Comparison -->
+                <div class="bg-gray-50 rounded-2xl p-8">
+                    <h3 class="text-2xl font-bold text-center mb-8">分析深度對比</h3>
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="text-center">
+                            <div class="bg-red-100 rounded-lg p-4 mb-4">
+                                <h4 class="font-semibold text-red-800 mb-2">❌ 一般工具</h4>
+                                <ul class="text-sm text-red-700 space-y-1">
+                                    <li>僅基礎關鍵字分析</li>
+                                    <li>表面競爭對手比較</li>
+                                    <li>缺乏 AI Overview 洞察</li>
+                                    <li>無具體執行建議</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-yellow-100 rounded-lg p-4 mb-4">
+                                <h4 class="font-semibold text-yellow-800 mb-2">⚠️ 手動分析</h4>
+                                <ul class="text-sm text-yellow-700 space-y-1">
+                                    <li>耗時 3-5 小時</li>
+                                    <li>容易遺漏關鍵資訊</li>
+                                    <li>主觀判斷偏誤</li>
+                                    <li>無法量化評估</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-green-100 rounded-lg p-4 mb-4">
+                                <h4 class="font-semibold text-green-800 mb-2">✅ 我們的系統</h4>
+                                <ul class="text-sm text-green-700 space-y-1">
+                                    <li>AI Overview 完整逆向分析</li>
+                                    <li>13+ 競爭對手深度比較</li>
+                                    <li>E-E-A-T 標準化評估</li>
+                                    <li>P1-P3 可執行策略</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Case Study Section -->
+    <section id="demo" class="section-padding">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    完整分析報告實例
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    以「浴室小飛蟲怎麼消滅」為例，展示我們的深度分析能力與具體改善建議
+                </p>
+            </div>
+
+            <!-- Input Example -->
+            <div class="max-w-2xl mx-auto mb-12 bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold mb-4 text-center">分析輸入範例</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">目標關鍵字</label>
+                        <div class="bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-gray-700">
+                            浴室小飛蟲怎麼消滅
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">您的網頁 URL</label>
+                        <div class="bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm">
+                            https://jgpcoshop.com.tw/post/蛾蚋防治技巧...
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
+                        <p class="text-sm text-blue-700">
+                            <span class="font-medium">自動競爭對手分析：</span>
+                            系統將自動從 Google AI Overview 中提取 13 個引用來源並進行深度分析
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Results -->
+            <div class="max-w-6xl mx-auto">
+                <div class="flex flex-wrap justify-center gap-2 mb-8">
+                    <button class="tab-btn px-6 py-2 rounded-lg font-medium transition" data-tab="overview">AI Overview 解構</button>
+                    <button class="tab-btn px-6 py-2 rounded-lg font-medium transition" data-tab="competitors">競爭對手分析</button>
+                    <button class="tab-btn px-6 py-2 rounded-lg font-medium transition" data-tab="gaps">內容差距診斷</button>
+                    <button class="tab-btn px-6 py-2 rounded-lg font-medium transition" data-tab="strategy">戰略改善計畫</button>
+                    <button class="tab-btn px-6 py-2 rounded-lg font-medium transition" data-tab="intent">關鍵字意圖</button>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <!-- AI Overview Analysis -->
+                    <div id="tab-overview" class="tab-content">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-bold">📊 Google AI Overview 完整解構</h3>
+                            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">13 個引用來源</span>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                            <h4 class="font-semibold mb-3">AI 摘要內容分析</h4>
+                            <p class="text-gray-700 text-sm leading-relaxed">
+                                浴室小飛蟲（通常指蛾蚋）的防治，主要著重於<strong>環境清潔和乾燥</strong>，並搭配物理或化學方法消滅成蟲和幼蟲。
+                                Google AI 的策略涵蓋四大面向：環境管理、物理防治、化學防治及其他輔助方法，
+                                強調<strong>保持乾燥、定期清潔排水口</strong>以減少孳生源。
+                            </p>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="font-semibold mb-3">🎯 核心策略重點</h4>
+                                <ul class="space-y-2 text-sm">
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">✓</span>
+                                        <span><strong>環境清潔：</strong>定期清潔排水口、避免積水</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">✓</span>
+                                        <span><strong>物理防治：</strong>排水孔蓋、蒼蠅拍、吸塵器</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">✓</span>
+                                        <span><strong>化學方法：</strong>稀釋漂白水、天然精油</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">✓</span>
+                                        <span><strong>居家方法：</strong>熱水沖洗、小蘇打與醋</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold mb-3">📈 引用來源分布</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span>健康醫療網站</span>
+                                        <span class="font-medium">38%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>專業除蟲公司</span>
+                                        <span class="font-medium">31%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>新聞媒體</span>
+                                        <span class="font-medium">23%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>個人經驗分享</span>
+                                        <span class="font-medium">8%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Competitor Analysis -->
+                    <div id="tab-competitors" class="tab-content hidden">
+                        <h3 class="text-xl font-bold mb-6">🔗 競爭對手 E-E-A-T 評估</h3>
+                        
+                        <div class="space-y-6">
+                            <!-- Top Competitor -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h4 class="font-semibold">health.businessweekly.com.tw</h4>
+                                        <p class="text-sm text-gray-600">良醫健康網 - 排名 #1</p>
+                                    </div>
+                                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">高權威</span>
+                                </div>
+                                <div class="grid grid-cols-4 gap-4 text-center text-sm">
+                                    <div>
+                                        <div class="text-lg font-bold text-blue-600">82%</div>
+                                        <div class="text-xs text-gray-500">經驗</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-green-600">89%</div>
+                                        <div class="text-xs text-gray-500">專業</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-purple-600">94%</div>
+                                        <div class="text-xs text-gray-500">權威</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-orange-600">91%</div>
+                                        <div class="text-xs text-gray-500">信任</div>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600 mt-2">
+                                    <strong>成功因素：</strong>商業週刊旗下健康頻道，引用環保署等權威來源，內容有明確作者與參考資料
+                                </p>
+                            </div>
+
+                            <!-- Second Competitor -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h4 class="font-semibold">www.storm.mg</h4>
+                                        <p class="text-sm text-gray-600">風傳媒 - 排名 #2</p>
+                                    </div>
+                                    <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">中權威</span>
+                                </div>
+                                <div class="grid grid-cols-4 gap-4 text-center text-sm">
+                                    <div>
+                                        <div class="text-lg font-bold text-blue-600">75%</div>
+                                        <div class="text-xs text-gray-500">經驗</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-green-600">78%</div>
+                                        <div class="text-xs text-gray-500">專業</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-purple-600">85%</div>
+                                        <div class="text-xs text-gray-500">權威</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-orange-600">87%</div>
+                                        <div class="text-xs text-gray-500">信任</div>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600 mt-2">
+                                    <strong>成功因素：</strong>知名新聞媒體，引用環保署官方建議，強調物理防治有效性
+                                </p>
+                            </div>
+
+                            <!-- Your Site Comparison -->
+                            <div class="border-2 border-orange-200 rounded-lg p-4 bg-orange-50">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h4 class="font-semibold">您的網站 (jgpcoshop.com.tw)</h4>
+                                        <p class="text-sm text-gray-600">佳廣專業除蟲 - 目前未被引用</p>
+                                    </div>
+                                    <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">待優化</span>
+                                </div>
+                                <div class="grid grid-cols-4 gap-4 text-center text-sm">
+                                    <div>
+                                        <div class="text-lg font-bold text-blue-600">88%</div>
+                                        <div class="text-xs text-gray-500">經驗</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-green-600">85%</div>
+                                        <div class="text-xs text-gray-500">專業</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-purple-600">72%</div>
+                                        <div class="text-xs text-gray-500">權威</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-bold text-orange-600">79%</div>
+                                        <div class="text-xs text-gray-500">信任</div>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600 mt-2">
+                                    <strong>改善空間：</strong>提升權威性與信任度，需要增加專業資歷展示和第三方引用
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Gaps -->
+                    <div id="tab-gaps" class="tab-content hidden">
+                        <h3 class="text-xl font-bold mb-6">🔍 內容差距精準診斷</h3>
+                        
+                        <div class="space-y-6">
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <h4 class="font-semibold text-red-800 mb-3">🚨 關鍵缺失內容</h4>
+                                <ul class="space-y-2 text-sm">
+                                    <li class="flex items-start">
+                                        <span class="text-red-500 mr-2">⚠️</span>
+                                        <span><strong>健康影響描述不足：</strong>缺少具體過敏反應症狀、呼吸道問題說明</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-red-500 mr-2">⚠️</span>
+                                        <span><strong>物理防治細節欠缺：</strong>防蟲網、吸塵器等工具應用場景描述不深入</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-red-500 mr-2">⚠️</span>
+                                        <span><strong>其他方法說明簡略：</strong>熱水、小蘇打與醋的具體比例和操作步驟</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <h4 class="font-semibold text-yellow-800 mb-3">💡 優化機會點</h4>
+                                <ul class="space-y-2 text-sm">
+                                    <li class="flex items-start">
+                                        <span class="text-yellow-600 mr-2">🎯</span>
+                                        <span><strong>化學防治擴充：</strong>更廣泛介紹不同類型殺蟲劑及適用性限制</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-yellow-600 mr-2">🎯</span>
+                                        <span><strong>比較表格缺失：</strong>不同防治方法的優缺點對比和適用情境</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-yellow-600 mr-2">🎯</span>
+                                        <span><strong>Q&A 擴充機會：</strong>蛾蚋是否叮咬、繁殖速度等常見疑問</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <h4 class="font-semibold text-green-800 mb-3">✅ 現有優勢</h4>
+                                <ul class="space-y-2 text-sm">
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">✓</span>
+                                        <span><strong>專業除蟲背景：</strong>具備實務經驗，可提升內容權威性</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">✓</span>
+                                        <span><strong>產品推薦具體：</strong>「駐樂寶」詳細使用方法和效果說明</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">✓</span>
+                                        <span><strong>內容結構清晰：</strong>天然到專業的完整防治光譜</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Strategy Plan -->
+                    <div id="tab-strategy" class="tab-content hidden">
+                        <h3 class="text-xl font-bold mb-6">🎯 戰略改善計畫</h3>
+                        
+                        <div class="space-y-6">
+                            <!-- P1 Priority -->
+                            <div class="border-l-4 border-red-500 bg-red-50 p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-bold text-red-800">P1 - 立即執行</h4>
+                                    <span class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-medium">高影響力 × 低執行難度</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="bg-white rounded p-3">
+                                        <h5 class="font-semibold text-sm mb-1">擴充「蛾蚋防治常見問題」區塊</h5>
+                                        <p class="text-xs text-gray-600 mb-2">補充蛾蚋是否叮咬人、不同防治方法適用性等常見疑問</p>
+                                        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">預期流量提升: +15%</span>
+                                    </div>
+                                    <div class="bg-white rounded p-3">
+                                        <h5 class="font-semibold text-sm mb-1">加強「物理防治方法」細節描述</h5>
+                                        <p class="text-xs text-gray-600 mb-2">明確說明各種工具的使用時機與具體操作</p>
+                                        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">預期流量提升: +12%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- P2 Priority -->
+                            <div class="border-l-4 border-yellow-500 bg-yellow-50 p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-bold text-yellow-800">P2 - 中期規劃</h4>
+                                    <span class="bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-medium">高影響力 × 高執行難度</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="bg-white rounded p-3">
+                                        <h5 class="font-semibold text-sm mb-1">強化「蛾蚋危害」的深度</h5>
+                                        <p class="text-xs text-gray-600 mb-2">補充具體健康風險，引用相關研究提升 E-E-A-T</p>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">執行週期: 2-3 週</span>
+                                    </div>
+                                    <div class="bg-white rounded p-3">
+                                        <h5 class="font-semibold text-sm mb-1">擴充「其他方法」內容細節</h5>
+                                        <p class="text-xs text-gray-600 mb-2">詳細操作步驟、比例配方和注意事項</p>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">執行週期: 1-2 週</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- P3 Priority -->
+                            <div class="border-l-4 border-blue-500 bg-blue-50 p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="font-bold text-blue-800">P3 - 長期優化</h4>
+                                    <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-medium">持續進行</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="bg-white rounded p-3">
+                                        <h5 class="font-semibold text-sm mb-1">新增「專業除蟲服務指引」</h5>
+                                        <p class="text-xs text-gray-600 mb-2">明確列出需要專業協助的狀況和判斷標準</p>
+                                        <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">品牌價值提升</span>
+                                    </div>
+                                    <div class="bg-white rounded p-3">
+                                        <h5 class="font-semibold text-sm mb-1">優化網站 E-E-A-T 訊號</h5>
+                                        <p class="text-xs text-gray-600 mb-2">增加專業資歷、公司證照、服務範圍展示</p>
+                                        <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">權威性強化</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Keyword Intent -->
+                    <div id="tab-intent" class="tab-content hidden">
+                        <h3 class="text-xl font-bold mb-6">🎯 關鍵字意圖深度分析</h3>
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="font-semibold mb-4">🎯 核心搜尋意圖</h4>
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                                    <h5 class="font-semibold text-blue-800 mb-2">資訊型 (Informational)</h5>
+                                    <p class="text-sm text-blue-700">
+                                        使用者主要尋求解決方案和操作指南，希望了解有效的防治方法
+                                    </p>
+                                </div>
+
+                                <h4 class="font-semibold mb-3">🔍 潛在搜尋意圖</h4>
+                                <ul class="space-y-2 text-sm">
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">•</span>
+                                        <span>尋找操作方法 (如何消滅、步驟)</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">•</span>
+                                        <span>了解相關危害 (對人體健康影響)</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">•</span>
+                                        <span>尋找最佳實踐 (天然、化學、物理防治)</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">•</span>
+                                        <span>探討優缺點 (不同方法的利弊)</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <span class="text-green-500 mr-2">•</span>
+                                        <span>尋求專家經驗 (真實案例、產品推薦)</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h4 class="font-semibold mb-4">📊 用戶需求權重分析</h4>
+                                <div class="space-y-3">
+                                    <div>
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-sm">操作方法需求</span>
+                                            <span class="text-sm font-medium">85%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-blue-500 h-2 rounded-full" style="width: 85%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-sm">安全性關注</span>
+                                            <span class="text-sm font-medium">72%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-green-500 h-2 rounded-full" style="width: 72%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-sm">效果比較</span>
+                                            <span class="text-sm font-medium">68%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-yellow-500 h-2 rounded-full" style="width: 68%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-sm">產品推薦</span>
+                                            <span class="text-sm font-medium">55%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div class="bg-purple-500 h-2 rounded-full" style="width: 55%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 bg-gray-50 rounded-lg p-4">
+                                    <h5 class="font-semibold text-sm mb-2">💡 內容策略建議</h5>
+                                    <p class="text-xs text-gray-600">
+                                        基於意圖分析，建議優先強化<strong>具體操作方法</strong>和<strong>安全注意事項</strong>，
+                                        其次補充<strong>效果比較</strong>內容，最後適度加入<strong>產品推薦</strong>。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section id="cta" class="section-padding bg-gradient-to-r from-primary to-primary-dark text-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">
+                準備好在 AI 時代脫穎而出了嗎？
+            </h2>
+            <p class="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
+                立即使用我們的內容差距分析器，讓您的內容成為 AI Overview 的首選引用來源
+            </p>
+            <div class="flex justify-center">
+                <a href="https://forms.gle/v1rxZwykEXDDA9fx5" target="_blank" class="inline-flex items-center justify-center px-12 py-5 text-lg font-bold rounded-lg text-white transition transform hover:scale-105 shadow-2xl" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);">
+                    立即申請試用
+                    <svg class="ml-3 -mr-1 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                    </svg>
+                </a>
+      
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-300">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="text-center">
+                <h3 class="text-xl font-semibold text-white mb-4">好事發生數位有限公司</h3>
+                <p class="text-gray-400 mb-6 max-w-2xl mx-auto">
+                    本專案由好事發生數位有限公司製作，致力於為您的 SEO 策略提供清晰的方向。
+                    若需要更深度的分析或顧問諮詢，歡迎與我們聯絡。
+                </p>
+                <div class="flex justify-center space-x-6">
+                    <a href="mailto:gary@ohya.co" class="hover:text-white transition">
+                        <span>Email: gary@ohya.co</span>
+                    </a>
+                    <span class="text-gray-600">|</span>
+                    <a href="https://www.threads.com/@ohya.studio" target="_blank" class="hover:text-white transition">
+                        <span>Threads: @ohya.studio</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Chart.js - Doughnut Chart
+        const ctx = document.getElementById('successChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [94.7, 5.3],
+                    backgroundColor: [
+                        '#10b981',
+                        '#e5e7eb'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: false
+                    }
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: false,
+                    duration: 1500
+                }
+            }
+        });
+
+        // Tab functionality
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabBtns.forEach((btn, index) => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('tab-active', 'bg-primary', 'text-white'));
+                tabBtns.forEach(b => b.classList.add('bg-gray-200', 'text-gray-700'));
+                tabContents.forEach(c => c.classList.add('hidden'));
+                
+                btn.classList.remove('bg-gray-200', 'text-gray-700');
+                btn.classList.add('tab-active', 'bg-primary', 'text-white');
+                document.getElementById(`tab-${btn.dataset.tab}`).classList.remove('hidden');
+            });
+        });
+
+        // Initialize first tab
+        tabBtns[0].click();
+
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

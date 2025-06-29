@@ -6,6 +6,7 @@ export interface StartAnalysisResponse {
   message?: string;
 }
 
+// JobStatus interface - updated for v6.0 AnalysisReport
 export interface JobStatus {
   id: string;
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'completed_with_errors';
@@ -24,7 +25,7 @@ export interface JobStatus {
   startedAt?: string;
   updatedAt?: string;
   completedAt?: string;
-  data?: AnalysisResult;
+  data?: AnalysisReport; // Updated to use v6.0 AnalysisReport
 }
 
 export interface AnalysisRequest {
@@ -57,7 +58,7 @@ export interface AIOverviewData {
   dataSource?: string;
 }
 
-export interface OpenAIInput {
+export interface GeminiInput {
   targetKeyword: string;
   aiOverview: AIOverviewData;
   userPage: PageContent;
@@ -66,7 +67,8 @@ export interface OpenAIInput {
 }
 
 // =================================================================
-// Final Analysis Report Structure (Unified based on Claude.md)
+// v6.0 Final Analysis Report Structure
+// Source of Truth: todo.md
 // =================================================================
 
 export interface ActionItem {
@@ -108,29 +110,43 @@ export interface AnalysisReport {
     structuredDataRecs: string;
   };
   reportFooter: string;
+}
 
-  // Additional metadata for internal processing/debugging (not part of the core AI output JSON)
-  analysisId?: string;
-  timestamp?: string;
+// =================================================================
+// Processing metadata interface for v6.0 workflow (4 stages)
+// =================================================================
+
+export interface ProcessingSteps {
+  serpApiStatus: string;
+  userPageStatus: string;
+  competitorPagesStatus: string;
+  aiAnalysisStatus: string;  // Removed contentRefinementStatus for v6.0
+}
+
+export interface QualityAssessment {
+  score: number;
+  level: 'excellent' | 'good' | 'fair' | 'poor';
+  completedSteps: number;
+  totalSteps: number;  // Should be 4 for v6.0 workflow
+  criticalFailures: number;
+  fallbacksUsed: string[];
+}
+
+// Extended AnalysisReport with processing metadata for system monitoring
+export interface AnalysisReportWithMetadata extends AnalysisReport {
+  // Additional data
+  analysisId: string;
+  timestamp: string;
   aiOverviewData?: AIOverviewData;
   competitorUrls?: string[];
-  processingSteps?: {
-    serpApiStatus: string;
-    userPageStatus: string;
-    competitorPagesStatus: string;
-    contentRefinementStatus: string;
-    aiAnalysisStatus: string;
-  };
-  qualityAssessment?: {
-    score: number;
-    level: 'excellent' | 'good' | 'fair' | 'poor';
-    completedSteps: number;
-    totalSteps: number;
-    criticalFailures: number;
-    fallbacksUsed: string[];
-  };
+
+  // Processing metadata
+  processingSteps?: ProcessingSteps;
+
+  // Quality and error information
+  qualityAssessment?: QualityAssessment;
   usedFallbackData?: boolean;
-  refinementSuccessful?: boolean;
+  jobCompletion?: any;
   errors?: string[];
   warnings?: Array<{
     code: string;
@@ -138,8 +154,3 @@ export interface AnalysisReport {
     details?: string;
   }>;
 }
-
-// For backward compatibility or specific Claude.md prompt usage if needed
-export type ClaudeAnalysisReport = AnalysisReport;
-
-

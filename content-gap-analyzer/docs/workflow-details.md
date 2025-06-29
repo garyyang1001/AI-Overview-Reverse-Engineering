@@ -1,380 +1,106 @@
-# AIO-Auditor v5.1 完整工作流程詳解
+# 內容差距分析器工作流程詳解
 
-## 📋 概述
+本文件詳細闡述了 `content-gap-analyzer` 專案的核心工作流程，旨在幫助用戶理解其網頁內容為何未能被 Google AI Overview 收錄，並提供具體、可執行的優化建議。整個流程分為三個主要階段，每個階段包含多個步驟，確保數據的全面性、分析的深度以及報告的實用性。
 
-AIO-Auditor 採用五階段非同步工作流程，每個階段都有特定的目標和功能。整個流程設計為生產級的可擴展架構，能夠處理大量內容並提供高品質的 SEO 差距分析。
+## 整體流程概覽
 
----
-
-## 🔄 五階段工作流程
-
-### 階段 1: AI Overview 數據提取 (10% 進度)
-**負責服務：** `serpApiService`  
-**處理時間：** 通常 2-5 秒  
-**目標：** 獲取 Google AI Overview 和相關搜尋結果
-
-#### 詳細步驟：
-1. **初始化 SerpAPI 連接**
-   - 驗證 API 金鑰
-   - 設定台灣地區搜尋參數（gl=tw, hl=zh-TW）
-
-2. **執行搜尋查詢**
-   ```javascript
-   searchParams = {
-     q: targetKeyword,
-     gl: 'tw',                    // 地理位置：台灣
-     hl: 'zh-TW',                 // 語言：繁體中文
-     device: 'mobile',            // 裝置：手機版面
-     google_domain: 'google.com.tw'
-   }
-   ```
-
-3. **AI Overview 提取**
-   - 優先搜尋 AI Overview 區塊
-   - 提取 AI Overview 文字內容
-   - 收集引用來源 URL 列表
-
-4. **降級策略處理**
-   - 如果沒有 AI Overview，使用有機搜尋結果
-   - 合併前 5-10 個搜尋結果的 snippet
-   - 標記為降級模式（fallbackUsed: true）
-
-#### 輸出結果：
-```typescript
-{
-  summaryText: string,      // AI Overview 文字或降級內容
-  references: string[],     // 引用來源 URL 陣列  
-  fallbackUsed: boolean,    // 是否使用降級模式
-  source: 'ai_overview' | 'organic_results'
-}
+```mermaid
+graph TD
+    A[用戶提交分析請求] --> B{後端接收請求};
+    B --> C[階段 1: 數據採集與預處理];
+    C --> D[階段 2: 智能分析與差距識別];
+    D --> E[階段 3: 報告生成與建議];
+    E --> F[結果返回前端];
 ```
 
----
+## 詳細工作流程步驟 (Phases)
 
-### 階段 2: 批量內容爬取 (30-60% 進度)
-**負責服務：** `crawl4aiService`  
-**處理時間：** 30-120 秒（取決於頁面數量）  
-**目標：** 爬取用戶頁面和競爭對手頁面的乾淨內容
+### 階段 1: 數據採集與預處理 (Data Collection & Pre-processing)
 
-#### 詳細步驟：
+此階段的目標是收集所有必要的原始數據，包括 Google AI Overview 的內容、用戶自身網頁的內容以及相關競爭對手網頁的內容。
 
-##### 2.1 用戶頁面爬取 (30-40% 進度)
-1. **啟動 Playwright 瀏覽器**
-   - 使用 Chromium 引擎
-   - 設定 User-Agent 模擬真實用戶
-   - 啟用 JavaScript 執行
+*   **步驟 1.1: 獲取 Google AI Overview (SerpAPI)**
+    *   **目的**: 獲取目標關鍵字在 Google 搜尋結果頁 (SERP) 中顯示的 AI Overview 摘要及其引用的來源網址。
+    *   **執行組件**: `backend/src/services/serpApiService.ts`
+    *   **數據流**:
+        1.  `analysisService` 調用 `serpApiService`。
+        2.  `serpApiService` 向外部 SerpAPI 發送請求，查詢目標關鍵字。
+        3.  SerpAPI 返回包含 AI Overview 文本、引用連結及其他 SERP 數據的 JSON 響應。
+        4.  `serpApiService` 處理響應，提取關鍵信息（摘要文本、引用 URL），並返回給 `analysisService`。
+    *   **關鍵考量**: 處理 SerpAPI 的配額限制、網絡錯誤及數據質量（例如，AI Overview 文本過短或無引用）。
 
-2. **頁面載入與等待**
-   ```javascript
-   await page.goto(userPageUrl, { 
-     waitUntil: 'networkidle',
-     timeout: 30000 
-   });
-   await page.waitForTimeout(2000); // 等待動態內容載入
-   ```
+*   **步驟 1.2: 爬取用戶網頁內容 (Crawl4AI)**
+    *   **目的**: 獲取用戶提交的目標網頁的乾淨、可供分析的文本內容。
+    *   **執行組件**: `backend/src/services/crawl4aiService.ts`
+    *   **數據流**:
+        1.  `analysisService` 調用 `crawl4aiService`。
+        2.  `crawl4aiService` 向獨立的 Crawl4AI 服務發送請求，指定用戶網頁 URL。
+        3.  Crawl4AI 服務使用無頭瀏覽器（如 Playwright）渲染網頁，並提取主要內容（去除導航、廣告等雜訊）。
+        4.  Crawl4AI 返回包含乾淨文本、標題結構、元描述等信息的 JSON 響應。
+        5.  `analysisService` 接收並儲存用戶網頁的內容。
+    *   **關鍵考量**: 確保爬取成功率、處理 JavaScript 渲染內容、提取內容的準確性。若爬取失敗，會使用 URL 作為 Gemini 的 URL Context 功能的備用方案。
 
-3. **內容提取**
-   - 標題：`page.title()`
-   - 元描述：`meta[name="description"]`
-   - 主要內容：移除導覽、廣告、腳本
-   - 標題結構：提取 H1-H6 標題
-   - 清理 HTML 轉為純文字
+*   **步驟 1.3: 爬取競爭對手網頁內容 (Crawl4AI)**
+    *   **目的**: 獲取從 AI Overview 引用中提取的以及用戶額外提供的競爭對手網頁的內容，作為內容差距分析的基準。
+    *   **執行組件**: `backend/src/services/crawl4aiService.ts`
+    *   **數據流**:
+        1.  `analysisService` 從 AI Overview 引用和用戶輸入中彙總競爭對手 URL 列表，並進行去重和過濾（排除用戶自身網頁）。
+        2.  `analysisService` 調用 `crawl4aiService` 進行批量網頁爬取。
+        3.  Crawl4AI 服務並行爬取這些 URL，返回各自的乾淨內容。
+        4.  `analysisService` 收集所有成功爬取到的競爭對手內容。
+    *   **關鍵考量**: 批量處理效率、錯誤處理（部分爬取失敗）、確保內容的相關性。若批量爬取失敗，會使用 URL 作為 Gemini 的 URL Context 功能的備用方案。
 
-##### 2.2 競爭對手批量爬取 (40-60% 進度)
-1. **URL 清單準備**
-   - 合併 AI Overview 引用 + 額外競爭對手 URL
-   - 去重並過濾無效 URL
-   - 限制最多 15 個 URL 避免超時
+### 階段 2: 智能分析與差距識別 (Intelligent Analysis & Gap Identification)
 
-2. **並行爬取策略**
-   ```javascript
-   // 同時開啟多個頁面進行並行爬取
-   const results = await Promise.allSettled(
-     urls.map(url => this.scrapePage(url))
-   );
-   ```
+此階段利用 Google Gemini AI 模型對收集到的所有數據進行深度分析，識別內容差距並生成初步的洞察。
 
-3. **錯誤處理與重試**
-   - 對失敗的頁面進行最多 2 次重試
-   - 記錄失敗原因（超時、403、404等）
-   - 繼續處理成功的頁面
+*   **步驟 2.1: Gemini AI 內容差距分析**
+    *   **目的**: 綜合 AI Overview、用戶網頁和競爭對手網頁的內容，利用大型語言模型 (LLM) 進行語義分析，識別內容缺失、E-E-A-T 弱點、意圖不匹配等問題。
+    *   **執行組件**: `backend/src/services/geminiService.ts`
+    *   **數據流**:
+        1.  `analysisService` 將所有收集到的數據（目標關鍵字、AI Overview 內容、用戶網頁內容、競爭對手網頁內容）組合成一個結構化的輸入對象。
+        2.  `analysisService` 調用 `geminiService`，並傳遞這些數據。
+        3.  `geminiService` 使用預定義的、針對內容差距分析優化的提示詞模板（v6.0 ultimate instruction prompt），將數據發送給 Google Gemini API。
+        4.  Google Gemini API 處理請求，生成詳細的分析報告，包括策略與計劃、關鍵字意圖、AI Overview 分析、引用來源分析、網站評估等。
+        5.  `geminiService` 接收並解析 Gemini 的響應，返回結構化的分析結果給 `analysisService`。
+    *   **關鍵考量**: 提示詞工程的精確性、AI 模型響應的穩定性、處理潛在的 API 錯誤。若 AI 分析失敗，會生成一個基礎的備用分析報告。
 
-#### 輸出結果：
-```typescript
-{
-  url: string,
-  title: string,
-  headings: string[],           // H1-H6 標題陣列
-  cleanedContent: string,       // 清理後的純文字內容
-  metaDescription: string,
-  success: boolean,
-  error?: string
-}
-```
+### 階段 3: 報告生成與建議 (Report Generation & Recommendations)
 
----
+最後階段是將分析結果整理成一份清晰、可操作的報告，並進行最終的質量評估。
 
-### 階段 3: 內容精煉與摘要 (60-80% 進度)
-**負責服務：** `contentRefinementService`  
-**使用模型：** Gemini  
-**目標：** 將長篇內容智能壓縮為關鍵點摘要
+*   **步驟 3.1: 生成詳細分析報告**
+    *   **目的**: 將 Gemini AI 生成的原始分析結果與其他元數據（如分析 ID、時間戳、處理步驟狀態）結合，形成最終的、完整的分析報告。
+    *   **執行組件**: `backend/src/services/analysisService.ts`
+    *   **數據流**:
+        1.  `analysisService` 接收到 `geminiService` 返回的分析結果。
+        2.  `analysisService` 添加額外的元數據，如分析 ID、時間戳、各處理步驟的狀態、使用的備用數據標誌等。
+        3.  將最終報告儲存起來，以便後續查詢。
 
-#### 詳細步驟：
+*   **步驟 3.2: 品質評估與成本優化考量**
+    *   **目的**: 評估本次分析的整體質量，並提供成本優化相關的信息。
+    *   **執行組件**: `backend/src/services/analysisService.ts`
+    *   **數據流**:
+        1.  `analysisService` 根據各個處理步驟的完成狀態、競爭對手網頁的成功爬取率等指標，計算一個分析質量分數和評級（例如：excellent, good, fair, poor）。
+        2.  這些質量評估信息會包含在最終的分析報告中。
+    *   **關鍵考量**: 確保評估指標的客觀性和準確性。
 
-##### 3.1 內容分塊 (Chunking)
-1. **分塊策略選擇**
-   ```javascript
-   if (content.length > 6000) {
-     // 使用標題分塊
-     chunks = this.chunkByHeadings(content);
-   } else {
-     // 使用遞歸字符分塊
-     chunks = this.chunkRecursively(content, 3000);
-   }
-   ```
+## 關鍵技術棧
 
-2. **Token 計算**
-   - 使用 tiktoken 精確計算 token 數量
-   - 確保每個 chunk 不超過模型限制
-   - 預留空間給 prompt 指令
+*   **後端**: Node.js, TypeScript, Express.js
+*   **AI 模型**: Google Gemini API
+*   **搜尋數據**: SerpAPI
+*   **網頁爬取**: Crawl4AI (Python, Playwright)
+*   **數據緩存**: Redis
+*   **前端**: React, TypeScript, TanStack Query, Tailwind CSS
 
-##### 3.2 並行摘要處理
-1. **Prompt 準備**
-   - 使用 Content Refinement Prompt
-   - 針對每個 chunk 單獨處理
-   - 設定溫度值 0.3 確保一致性
+## 數據流總結
 
-2. **批量 API 呼叫**
-   ```javascript
-   const summaries = await Promise.allSettled(
-     chunks.map(chunk => this.refineChunk(chunk))
-   );
-   ```
+1.  **用戶請求**: 前端收集用戶輸入（關鍵字、URL），發送 API 請求至後端。
+2.  **後端協調**: `analysisController` 接收請求，轉交給 `analysisService`。
+3.  **外部數據獲取**: `analysisService` 調用 `serpApiService` (獲取 AI Overview) 和 `crawl4aiService` (爬取網頁內容)。
+4.  **AI 分析**: `analysisService` 將所有數據傳遞給 `geminiService`，由其與 Google Gemini API 交互進行核心分析。
+5.  **結果回傳**: `geminiService` 返回分析結果給 `analysisService`，後者進行最終整理。
+6.  **報告呈現**: `analysisService` 將最終報告返回給 `analysisController`，再由其發送回前端，前端負責渲染展示。
 
-3. **成本追蹤**
-   - 記錄每次 API 呼叫的 token 使用量
-   - 累計計算總成本
-   - 檢查是否超過每日限額
-
-##### 3.3 結果彙整
-1. **摘要合併**
-   - 將所有 chunk 的摘要合併
-   - 去除重複的關鍵點
-   - 保持邏輯順序
-
-2. **品質評估**
-   - 檢查壓縮比例（原文 vs 摘要）
-   - 驗證關鍵資訊是否保留
-   - 標記處理成功/失敗狀態
-
-#### 輸出結果：
-```typescript
-{
-  url: string,
-  originalLength: number,       // 原始內容長度
-  refinedSummary: string,       // 精煉後的摘要
-  keyPoints: string[],          // 關鍵點陣列
-  refinementSuccess: boolean,
-  refinementStats: {
-    totalChunks: number,
-    successful: number,
-    failed: number
-  }
-}
-```
-
----
-
-### 階段 4: E-E-A-T 差距分析 (80-95% 進度)
-**負責服務：** `geminiService`  
-**使用模型：** Gemini  
-**目標：** 基於 E-E-A-T 原則進行深度差距分析
-
-#### 詳細步驟：
-
-##### 4.1 分析數據準備
-1. **輸入結構組裝**
-   ```json
-   {
-     "analysisContext": {
-       "targetKeyword": "目標關鍵字",
-       "aiOverview": {
-         "text": "AI Overview 完整文字",
-         "references": ["url1", "url2"]
-       }
-     },
-     "userPage": {
-       "url": "用戶頁面 URL",
-       "essentialsSummary": "精煉後的摘要"
-     },
-     "competitorPages": [
-       {
-         "url": "競爭對手 URL",
-         "essentialsSummary": "精煉後的摘要"
-       }
-     ]
-   }
-   ```
-
-##### 4.2 Main Analysis Prompt 執行
-1. **Prompt 渲染**
-   - 使用 promptService 載入 Main Analysis Prompt
-   - 替換模板變數
-   - 設定溫度值 0.7 平衡創意與一致性
-
-2. **API 呼叫配置**
-   ```javascript
-   {
-     model: 'gpt-4o-mini',
-     response_format: { type: 'json_object' },
-     temperature: 0.7,
-     max_tokens: 4000
-   }
-   ```
-
-##### 4.3 結果解析與驗證
-1. **JSON 格式驗證**
-   - 檢查回傳是否為有效 JSON
-   - 驗證必要欄位是否存在
-   - 處理解析錯誤
-
-2. **內容品質檢查**
-   - 確保所有分數在合理範圍內
-   - 驗證建議是否具體可執行
-   - 檢查是否包含繁體中文內容
-
-#### 輸出結果：
-```typescript
-{
-  executiveSummary: {
-    mainReasonForExclusion: string,
-    topPriorityAction: string,
-    confidenceScore: number
-  },
-  eatAnalysis: {
-    experience: EATDimension,
-    expertise: EATDimension, 
-    authoritativeness: EATDimension,
-    trustworthiness: EATDimension
-  },
-  contentGapAnalysis: {
-    missingTopics: MissingTopic[],
-    missingEntities: MissingEntity[],
-    contentDepthGaps: ContentDepthGap[]
-  },
-  actionablePlan: {
-    immediate: ActionItem[],
-    shortTerm: ActionItem[],
-    longTerm: ActionItem[]
-  },
-  competitorInsights: CompetitorInsights,
-  successMetrics: SuccessMetrics
-}
-```
-
----
-
-### 階段 5: 結果準備與品質評估 (95-100% 進度)
-**負責服務：** `errorHandler`, `analysisWorker`  
-**目標：** 彙整結果、評估品質、準備最終輸出
-
-#### 詳細步驟：
-
-##### 5.1 工作完成狀態評估
-1. **步驟完成度檢查**
-   ```javascript
-   const completedSteps = [
-     'serpapi',           // AI Overview 提取
-     'user_scraping',     // 用戶頁面爬取
-     'competitor_scraping', // 競爭對手爬取
-     'content_refinement', // 內容精煉
-     'ai_analysis'        // AI 分析
-   ];
-   ```
-
-2. **錯誤分類與處理**
-   - 嚴重錯誤：導致分析失敗
-   - 警告：部分功能受限但可繼續
-   - 降級：使用備用方案
-
-##### 5.2 品質分數計算
-```javascript
-qualityScore = (
-  completedSteps.length * 20 +          // 基礎分數
-  refinementSuccessRate * 10 +          // 精煉成功率
-  (aiAnalysisSuccess ? 20 : 0) +        // AI 分析成功
-  (noFallbacks ? 10 : 0)                // 無降級使用
-);
-```
-
-##### 5.3 最終結果組裝
-1. **元數據添加**
-   - 分析 ID 和時間戳
-   - 處理步驟狀態
-   - 成本統計資訊
-
-2. **錯誤資訊轉譯**
-   - 將技術錯誤轉為用戶友好訊息
-   - 提供解決建議
-   - 分類為錯誤/警告
-
-#### 輸出結果：
-```typescript
-{
-  ...analysisResult,           // 完整分析結果
-  analysisId: string,
-  timestamp: string,
-  aiOverviewData: AIOverviewData,
-  competitorUrls: string[],
-  processingSteps: ProcessingSteps,
-  jobCompletion: {
-    status: 'completed' | 'completed_with_errors' | 'failed',
-    qualityScore: number,
-    fallbacksUsed: number
-  },
-  qualityAssessment: {
-    score: number,
-    level: 'excellent' | 'good' | 'fair' | 'poor',
-    completedSteps: number,
-    totalSteps: 5,
-    criticalFailures: number
-  },
-  errors: FrontendError[],
-  warnings: FrontendError[]
-}
-```
-
----
-
-## 🔧 錯誤處理與降級策略
-
-### 階段性降級處理
-1. **SerpAPI 失敗** → 使用樣本數據或跳過分析
-2. **爬取失敗** → 使用部分成功的頁面繼續
-3. **精煉失敗** → 使用原始內容進行分析
-4. **AI 分析失敗** → 提供基礎的降級分析結果
-
-### 品質保證機制
-- **重試邏輯**：關鍵步驟自動重試 2-3 次
-- **超時保護**：每個階段設定合理超時時間
-- **資源限制**：控制並行數量避免系統過載
-- **成本控制**：追蹤 API 使用量並設定每日限額
-
----
-
-## 📊 效能指標
-
-### 標準處理時間
-- **小型分析**（1 用戶頁面 + 5 競爭對手）：60-90 秒
-- **中型分析**（1 用戶頁面 + 10 競爭對手）：90-150 秒  
-- **大型分析**（1 用戶頁面 + 15 競爭對手）：120-200 秒
-
-### 成本估算（基於 gpt-4o-mini）
-- **內容精煉**：約 $0.01-0.05 per 頁面
-- **主分析**：約 $0.05-0.10 per 分析  
-- **總計**：約 $0.20-1.00 per 完整分析
-
-### 成功率目標
-- **總體完成率**：>95%
-- **高品質分析**（分數 >80）：>70%
-- **零降級分析**：>60%
+整個流程強調自動化、智能化和可操作性，旨在為用戶提供深入的內容優化洞察。

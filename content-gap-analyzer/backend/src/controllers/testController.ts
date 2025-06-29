@@ -52,7 +52,11 @@ class TestController {
       
       logger.info(`Starting ${category} test execution via API`);
       
-      const results = await testingService.runCategoryTests(category as 'content_refinement' | 'main_analysis');
+      // v6.0: Only main_analysis category supported
+      if (category !== 'main_analysis') {
+        throw new AppError('Only main_analysis category is supported in v6.0', 400, 'INVALID_CATEGORY');
+      }
+      const results = await testingService.runCategoryTests(category as 'main_analysis');
       
       const passed = results.filter(r => r.success).length;
       const avgScore = results.reduce((sum, r) => sum + r.score, 0) / results.length;
@@ -174,7 +178,8 @@ class TestController {
       
       logger.info(`Validating prompt quality for ${category} with ${sampleSize} samples`);
       
-      const testCases = goldenTestSet.getTestCasesByCategory(category);
+      // v6.0: getTestCasesByCategory() no longer takes parameters
+      const testCases = goldenTestSet.getTestCasesByCategory();
       const selectedTests = testCases.slice(0, Math.min(sampleSize, testCases.length));
       
       const results = [];

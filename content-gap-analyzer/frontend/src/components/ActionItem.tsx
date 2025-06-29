@@ -52,3 +52,4 @@ const ActionItem: React.FC<ActionItemProps> = ({
 };
 
 export default ActionItem;
+export { ActionItem as ActionItemComponent };

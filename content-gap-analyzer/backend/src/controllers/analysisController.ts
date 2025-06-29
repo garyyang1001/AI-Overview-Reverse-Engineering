@@ -159,7 +159,6 @@ class AnalysisController {
     try {
       const versions = promptService.getAvailableVersions();
       const currentVersions = {
-        content_refinement: promptService.getCurrentPrompt('content_refinement')?.version,
         main_analysis: promptService.getCurrentPrompt('main_analysis')?.version
       };
       

@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { contentRefinementService } from '../services/contentRefinementService';
+// import { contentRefinementService } from '../services/contentRefinementService'; // Service removed
 
 async function testContentRefinement() {
   console.log('=== 測試內容精煉 ===\n');
@@ -23,16 +23,12 @@ async function testContentRefinement() {
     metaDescription: '睡眠習慣改善指南'
   };
 
-  console.log('1. 測試咖啡豆內容精煉...');
-  const refined1 = await contentRefinementService.refinePage(testContent1);
+  console.log('1. 測試跳過 - 內容精煉服務已移除');
   console.log('原始內容:', testContent1.cleanedContent);
-  console.log('精煉結果:', refined1.refinedSummary);
   console.log('');
 
-  console.log('2. 測試睡眠習慣內容精煉...');
-  const refined2 = await contentRefinementService.refinePage(testContent2);
+  console.log('2. 測試跳過 - 內容精煉服務已移除');
   console.log('原始內容:', testContent2.cleanedContent);
-  console.log('精煉結果:', refined2.refinedSummary);
   console.log('');
 
   console.log('=== 測試完成 ===');

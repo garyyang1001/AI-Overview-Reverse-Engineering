@@ -6,16 +6,17 @@ import logger from '../utils/logger';
 // 導入各階段服務
 import { serpApiService } from '../services/serpApiService';
 import { crawl4aiService, ScrapeResult } from '../services/crawl4aiService'; // Changed from playwrightService
-import { contentRefinementService } from '../services/contentRefinementService';
-import { openaiService } from '../services/geminiService';
+
+import { geminiService } from '../services/geminiService';
+// import { promptService } from '../services/promptService'; // Not used in this version
 
 // 導入錯誤處理系統
 import { errorHandler } from '../services/errorHandler';
 import { WorkerStepError } from '../types/errors';
-import { PageContent } from '../shared/types'; // Import PageContent
+import { PageContent, AnalysisReport } from '../shared/types'; // Import PageContent
 
 /**
- * 分析 Worker - 處理完整的 5 階段分析工作流
+ * 分析 Worker - 處理完整的 4 階段分析工作流
  */
 class AnalysisWorker {
   private worker: Worker<AnalysisJobData>;
@@ -81,7 +82,6 @@ class AnalysisWorker {
         serpApiStatus: 'pending',
         userPageStatus: 'pending',
         competitorPagesStatus: 'pending',
-        contentRefinementStatus: 'pending',
         aiAnalysisStatus: 'pending'
       };
 
@@ -251,8 +251,10 @@ class AnalysisWorker {
           logger.warn(`Job ${jobId}: No competitor pages successfully scraped`);
         } else if (failedResults.length > 0) {
           processingSteps.competitorPagesStatus = 'partial';
+          completedSteps.push('competitor_scraping');
         } else {
           processingSteps.competitorPagesStatus = 'completed';
+          completedSteps.push('competitor_scraping');
         }
       } catch (error: any) {
         logger.warn(`Job ${jobId}: Competitor scraping failed: ${error.message}`);
@@ -260,92 +262,49 @@ class AnalysisWorker {
         competitorPages = [];
       }
 
-      await job.updateProgress(60);
-
-      // 階段 3: 內容精煉 (60-80%)
-      logger.info(`Job ${jobId}: Starting content refinement phase`);
-      processingSteps.contentRefinementStatus = 'processing';
-
-      const allPages = [userPage, ...competitorPages];
-      let refinedContents: any[];
-      let refinementSuccessful = true;
-
-      try {
-        refinedContents = await contentRefinementService.refineMultiplePages(allPages);
-        processingSteps.contentRefinementStatus = 'completed';
-      } catch (error: any) {
-        logger.warn(`Job ${jobId}: Content refinement failed: ${error.message}`);
-        processingSteps.contentRefinementStatus = 'failed';
-        refinementSuccessful = false;
-        
-        // 降級：使用原始內容
-        refinedContents = allPages.map(page => ({
-          url: page.url,
-          originalLength: page.cleanedContent?.length || 0,
-          refinedSummary: page.cleanedContent || '',
-          keyPoints: [],
-          refinementSuccess: false,
-          refinementStats: { totalChunks: 1, successful: 0, failed: 1 }
-        }));
-      }
-
-      const refinedUserContent = refinedContents[0];
-      const refinedCompetitorContents = refinedContents.slice(1);
-
-      await job.updateProgress(80);
+      
 
       // 階段 4: 最終差距分析 (80-95%)
       logger.info(`Job ${jobId}: Performing content gap analysis`);
       processingSteps.aiAnalysisStatus = 'processing';
 
-      let analysisResult: any;
+      let analysisResult: AnalysisReport;
 
       try {
-        const validCompetitorContents = refinedCompetitorContents.filter((_, index) => 
-          competitorPages[index] && competitorPages[index].cleanedContent
-        );
+        // Prepare crawled content for the prompt
+        let crawledContent = '';
+        const allScrapedPages = [userPage, ...competitorPages];
 
-        // 詳細記錄傳遞給 OpenAI 的數據
-        logger.info(`Job ${jobId}: Preparing data for OpenAI analysis`, {
+        allScrapedPages.forEach(page => {
+          if (page.cleanedContent) {
+            crawledContent += `--- START OF CONTENT FOR ${page.url} ---\n${page.cleanedContent}\n--- END OF CONTENT FOR ${page.url} ---\n\n`;
+          }
+        });
+
+        // Prepare cited URLs list for the prompt
+        // const citedUrlsList = aiOverview.references.map(ref => `${ref}`).join('\n'); // Not needed
+
+        logger.info(`Job ${jobId}: Preparing data for Gemini analysis`, {
           targetKeyword,
           userPageUrl: userPage.url,
-          userContentLength: refinedUserContent.refinedSummary?.length || 0,
-          competitorCount: validCompetitorContents.length,
-          aiOverviewLength: aiOverview.summaryText?.length || 0
+          aiOverviewLength: aiOverview.summaryText?.length || 0,
+          crawledContentLength: crawledContent.length,
+          citedUrlsCount: aiOverview.references.length
         });
 
-        // 記錄用戶頁面精煉摘要的前100字符
-        if (refinedUserContent.refinedSummary) {
-          logger.debug(`Job ${jobId}: User page refined summary preview:`, {
-            preview: refinedUserContent.refinedSummary.substring(0, 100) + '...',
-            fullLength: refinedUserContent.refinedSummary.length
-          });
-        }
-
-        // 記錄競爭對手精煉摘要
-        validCompetitorContents.forEach((refined, index) => {
-          logger.debug(`Job ${jobId}: Competitor ${index} refined summary:`, {
-            url: competitorPages[index]?.url,
-            preview: refined.refinedSummary?.substring(0, 100) + '...',
-            fullLength: refined.refinedSummary?.length || 0
-          });
-        });
-
-        analysisResult = await openaiService.analyzeContentGap({
+        // Construct GeminiInput object for the service
+        const geminiInput = {
           targetKeyword,
-          userPage: {
-            ...userPage,
-            cleanedContent: refinedUserContent.refinedSummary
-          },
           aiOverview,
-          competitorPages: validCompetitorContents.map((refined, index) => ({
-            ...competitorPages[index],
-            cleanedContent: refined.refinedSummary
-          })),
-          jobId  // v5.1 新增：傳遞 jobId 用於成本追蹤
-        });
+          userPage,
+          competitorPages,
+          jobId
+        };
+
+        analysisResult = await geminiService.analyzeContentGap(geminiInput);
 
         processingSteps.aiAnalysisStatus = 'completed';
+        completedSteps.push('ai_analysis');
       } catch (error: any) {
         logger.error(`Job ${jobId}: AI analysis failed: ${error.message}`);
         processingSteps.aiAnalysisStatus = 'failed';
@@ -380,7 +339,6 @@ class AnalysisWorker {
         competitorUrls: uniqueCompetitorUrls,
         processingSteps,
         usedFallbackData: aiOverview.fallbackUsed || false,
-        refinementSuccessful,
         
         // v5.1 新增：分層錯誤處理結果
         jobCompletion,
@@ -390,7 +348,7 @@ class AnalysisWorker {
           score: jobCompletion.qualityScore,
           level: this.getQualityLevel(jobCompletion.qualityScore),
           completedSteps: completedSteps.length,
-          totalSteps: 5,
+          totalSteps: 4, // Changed from 5 to 4
           criticalFailures: stepErrors.filter(e => !e.canContinue).length,
           fallbacksUsed: jobCompletion.fallbacksUsed
         }
@@ -412,113 +370,36 @@ class AnalysisWorker {
   }
 
   /**
-   * 生成降級分析結果（v5.1 結構）
+   * 生成降級分析結果（ClaudeAnalysisReport 結構）
    */
-  private generateFallbackAnalysis(targetKeyword: string, aiOverview: any): any {
+  private generateFallbackAnalysis(targetKeyword: string, aiOverview: any): AnalysisReport {
     return {
-      executiveSummary: {
-        mainReasonForExclusion: `⚠️ 技術問題導致分析部分完成。關鍵字「${targetKeyword}」的搜索結果${aiOverview.fallbackUsed ? '使用了備用數據源' : '包含 AI Overview'}，但無法完成完整的 AI 分析。`,
-        topPriorityAction: '請檢查系統設定並重新嘗試分析，或手動檢查競爭對手內容。',
-        confidenceScore: 30
-      },
-      contentGapAnalysis: {
-        missingTopics: [
+      strategyAndPlan: {
+        p1_immediate: [
           {
-            topic: '需要手動分析',
-            importance: 'high',
-            competitorCoverage: 0,
-            implementationComplexity: 'unknown',
-            description: '由於技術問題，無法完成自動主題分析。請手動檢查競爭對手頁面內容。'
+            recommendation: `⚠️ 技術問題導致分析部分完成。關鍵字「${targetKeyword}」的搜索結果${aiOverview.fallbackUsed ? '使用了備用數據源' : '包含 AI Overview'}，但無法完成完整的 AI 分析。`,
+            geminiPrompt: "請檢查系統設定並重新嘗試分析，或手動檢查競爭對手內容。"
           }
         ],
-        missingEntities: [
-          {
-            entity: '需要手動識別',
-            type: 'unknown',
-            relevance: 'high',
-            competitorMentions: 0,
-            description: '無法自動識別缺失實體。建議檢查競爭對手提及的品牌、人物、組織等。'
-          }
-        ],
-        contentDepthGaps: [
-          {
-            area: '整體內容分析',
-            currentDepth: 'unknown',
-            requiredDepth: 'unknown',
-            competitorAdvantage: '由於技術問題，無法評估競爭對手優勢'
-          }
-        ]
+        p2_mediumTerm: [],
+        p3_longTerm: []
       },
-      eatAnalysis: {
-        experience: {
-          userScore: 50,
-          competitorAverage: 50,
-          gaps: ['無法評估'],
-          opportunities: ['請重新嘗試分析']
-        },
-        expertise: {
-          userScore: 50,
-          competitorAverage: 50,
-          gaps: ['無法評估'],
-          opportunities: ['請重新嘗試分析']
-        },
-        authoritativeness: {
-          userScore: 50,
-          competitorAverage: 50,
-          gaps: ['無法評估'],
-          opportunities: ['請重新嘗試分析']
-        },
-        trustworthiness: {
-          userScore: 50,
-          competitorAverage: 50,
-          gaps: ['無法評估'],
-          opportunities: ['請重新嘗試分析']
-        }
+      keywordIntent: {
+        coreIntent: "分析失敗，無法確定搜索意圖",
+        latentIntents: ["建議手動檢查競爭對手", "重新嘗試系統分析"]
       },
-      actionablePlan: {
-        immediate: [
-          {
-            action: '檢查系統設定',
-            title: '檢查 API 設定',
-            description: '驗證 OpenAI API 密鑰是否正確配置並重新嘗試分析',
-            impact: 'high',
-            effort: 'low',
-            timeline: '5-10 分鐘',
-            implementation: '1. 檢查 .env 文件中的 OPENAI_API_KEY 2. 重啟後端服務 3. 重新提交分析',
-            expectedOutcome: '修復技術問題，獲得完整的分析結果'
-          }
-        ],
-        shortTerm: [
-          {
-            action: '手動競爭對手分析',
-            title: '手動內容比較',
-            description: '在系統修復前，手動比較競爭對手內容',
-            impact: 'medium',
-            effort: 'high',
-            timeline: '1-2 小時',
-            implementation: '1. 訪問 AI Overview 中的競爭對手頁面 2. 記錄內容差異 3. 識別缺失主題和實體',
-            expectedOutcome: '獲得基本的內容差距洞察'
-          }
-        ],
-        longTerm: []
+      aiOverviewAnalysis: {
+        summary: "AI Overview 分析因技術問題無法完成",
+        presentationAnalysis: "無法分析呈現方式，建議手動檢查"
       },
-      competitorInsights: {
-        topPerformingCompetitor: {
-          url: 'unknown',
-          strengths: ['無法分析'],
-          keyDifferentiators: ['請重新嘗試分析']
-        },
-        commonPatterns: ['由於技術問題，無法識別競爭對手的共同模式']
+      citedSourceAnalysis: [],
+      websiteAssessment: {
+        contentSummary: "分析失敗，無法評估網站內容",
+        contentGaps: [`缺少針對 ${targetKeyword} 的深度內容`],
+        pageExperience: "無法評估頁面體驗",
+        structuredDataRecs: "建議添加基本的 Schema 標記"
       },
-      successMetrics: {
-        primaryKPI: '修復系統問題',
-        trackingRecommendations: [
-          '檢查系統日誌確認錯誤原因',
-          '驗證 API 配置',
-          '重新執行分析'
-        ],
-        timeframe: '立即處理'
-      }
+      reportFooter: "⚠️ 本報告因技術問題而簡化生成。建議重新嘗試分析以獲得完整結果，或聯繫技術支持獲得協助。"
     };
   }
 

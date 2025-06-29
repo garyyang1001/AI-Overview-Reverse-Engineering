@@ -337,12 +337,13 @@ span {
 }
 
 .ai-overview-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-normal);
+  border-radius: 8px;
   padding: var(--space-md);
   margin: var(--space-sm) 0;
-  color: var(--text-white);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .ai-overview-header {
@@ -353,7 +354,8 @@ span {
 }
 
 .ai-overview-badge {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--p1-header-bg);
+  color: var(--text-white);
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: var(--text-small);
@@ -362,7 +364,7 @@ span {
 
 .reference-count {
   font-size: var(--text-small);
-  opacity: 0.9;
+  color: var(--text-secondary);
 }
 
 .ai-overview-content {
@@ -371,13 +373,13 @@ span {
 }
 
 .ai-overview-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid var(--border-light);
   padding-top: var(--space-sm);
 }
 
 .footer-label {
   font-size: var(--text-small);
-  opacity: 0.8;
+  color: var(--text-secondary);
   display: block;
   margin-bottom: var(--space-xs);
 }
@@ -389,21 +391,23 @@ span {
 }
 
 .reference-link {
-  background: rgba(255, 255, 255, 0.15);
-  color: var(--text-white);
+  background: var(--bg-priority-block);
+  color: var(--text-primary);
   text-decoration: none;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: var(--text-small);
-  transition: background-color 0.2s;
+  border: 1px solid var(--border-light);
+  transition: background-color 0.2s, border-color 0.2s;
 }
 
 .reference-link:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--border-normal);
+  border-color: var(--border-normal);
 }
 
 .more-references {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   font-size: var(--text-small);
 }
 

@@ -1,9 +1,9 @@
 import logger from '../utils/logger';
 import { serpApiService } from './serpApiService';
-import { openaiService } from './geminiService';
-import { contentRefinementService } from './contentRefinementService';
+import { geminiService } from './geminiService';
+
 import { crawl4aiService, ScrapeResult } from './crawl4aiService';
-import { AnalysisRequest, AnalysisResult, ClaudeAnalysisReport } from '../types';
+import { AnalysisRequest, AnalysisReportWithMetadata } from '../types';
 
 interface AnalysisStatus {
   analysisId: string;
@@ -14,16 +14,15 @@ interface AnalysisStatus {
 
 class AnalysisService {
   private analysisStatus: Map<string, AnalysisStatus> = new Map();
-  private analysisResults: Map<string, AnalysisResult> = new Map();
+  private analysisResults: Map<string, any> = new Map();
   
-  async performAnalysis(analysisId: string, request: AnalysisRequest): Promise<AnalysisResult> {
+  async performAnalysis(analysisId: string, request: AnalysisRequest): Promise<any> {
     try {
       // Initialize processing steps
       const processingSteps = {
         serpApiStatus: 'pending',
         userPageStatus: 'pending', 
         competitorPagesStatus: 'pending',
-        contentRefinementStatus: 'pending',
         aiAnalysisStatus: 'pending'
       };
       
@@ -186,124 +185,81 @@ class AnalysisService {
 
       this.updateStatus(analysisId, 'processing', 60);
 
-      // Step 4: Content Refinement - Parallel processing of all content
-      logger.info('Starting content refinement phase');
-      processingSteps.contentRefinementStatus = 'processing';
-
-      // Only refine successfully scraped pages. Failed ones will be handled by Gemini URL Context.
-      const pagesToRefine = [userPageResult, ...competitorResults]
-        .filter(r => r.success && r.content)
-        .map(r => ({
-          url: r.url,
-          title: r.title || '',
-          headings: r.headings || [],
-          cleanedContent: r.content || '', // Ensure cleanedContent is always a string
-          metaDescription: r.metaDescription || ''
-        }));
-      logger.info(`Refining ${pagesToRefine.length} successfully scraped pages in parallel`);
-
-      let refinedContents: any[] = [];
-      let refinementSuccessful = true;
-
-      if (pagesToRefine.length > 0) {
-        try {
-          refinedContents = await contentRefinementService.refineMultiplePages(
-            pagesToRefine.map(p => ({
-              ...p,
-              cleanedContent: p.cleanedContent || '',
-              headings: p.headings || [] // Ensure headings is always string[]
-            })),
-          );
-          processingSteps.contentRefinementStatus = 'completed';
-          logger.info(`Content refinement completed: ${refinedContents.length} pages processed`);
-        } catch (error: any) {
-          logger.warn(`Content refinement failed: ${error.message}. Using original content for successful scrapes.`);
-          processingSteps.contentRefinementStatus = 'failed';
-          refinementSuccessful = false;
-
-          // Fallback: use original content for successfully scraped pages that failed refinement
-          refinedContents = pagesToRefine.map(page => ({
-            url: page.url,
-            originalLength: page.cleanedContent?.length || 0,
-            refinedSummary: page.cleanedContent || '',
-            keyPoints: [],
-            refinementSuccess: false,
-            refinementStats: { totalChunks: 1, successful: 0, failed: 1 }
-          }));
-        }
-      }
-
-      // Map refined content back to original structure for OpenAI input
-      const userPageForOpenAI = refinedContents.find(rc => rc.url === userPageResult.url) || { url: userPageResult.url, cleanedContent: userPageResult.content || '' };
-      const competitorPagesForOpenAI = competitorResults.map(compResult => {
-        const refined = refinedContents.find(rc => rc.url === compResult.url);
-        return {
-          url: compResult.url,
-          cleanedContent: refined?.refinedSummary || compResult.content || '',
-          title: compResult.title,
-          headings: compResult.headings || [], // Ensure headings is always string[]
-          metaDescription: compResult.metaDescription
-        };
-      });
-
-      this.updateStatus(analysisId, 'processing', 80);
-
-      // Step 5: Final Gap Analysis with available content
-      logger.info('Performing content gap analysis with OpenAI');
+      // Step 4: Final Gap Analysis with available content (now Phase 3 in new workflow)
+      logger.info('Performing content gap analysis with Gemini');
       processingSteps.aiAnalysisStatus = 'processing';
 
-      let analysisResult: ClaudeAnalysisReport;
+      let analysisResult: AnalysisReportWithMetadata; // Updated to use standardized interface
 
       try {
-        // Prepare competitor data - handle cases where some competitors failed
-        const validCompetitorPagesForOpenAI = competitorPagesForOpenAI.filter(page => page.cleanedContent);
+        // Prepare crawled content for the v6.0 prompt format
+        let crawledContent = '';
+        const allScrapedPages = [userPageResult, ...competitorResults];
 
-        logger.debug('Inspecting userPageForOpenAI before AI analysis:', {
-          url: userPageForOpenAI.url,
-          cleanedContent: userPageForOpenAI.cleanedContent,
-          typeOfCleanedContent: typeof userPageForOpenAI.cleanedContent,
-          cleanedContentLength: userPageForOpenAI.cleanedContent?.length,
+        allScrapedPages.forEach(page => {
+          if (page.success && page.content) {
+            crawledContent += `--- START OF CONTENT FOR ${page.url} ---\n${page.content}\n--- END OF CONTENT FOR ${page.url} ---\n\n`;
+          }
         });
-        logger.info(`🤖 [GEMINI] Starting AI analysis with data preparation:`, {
+
+        // Prepare cited URLs list for the prompt
+        const citedUrls = aiOverview.references.join('\n');
+        
+        logger.info(`🚀 [GEMINI] Using v6.0 ultimate instruction prompt...`);
+
+        // Prepare data for the v6.0 prompt template
+        const promptData = {
           targetKeyword: request.targetKeyword,
-          userPageContent: userPageForOpenAI.cleanedContent ? userPageForOpenAI.cleanedContent.length : 0, // Corrected
-          validCompetitorPages: validCompetitorPagesForOpenAI.length,
-          totalAttemptedCompetitors: uniqueCompetitorUrls.length,
-          aiOverviewData: {
-            summaryLength: aiOverview.summaryText.length,
-            referencesCount: aiOverview.references.length,
-            fallbackUsed: aiOverview.fallbackUsed,
-          },
-        });
+          userPageUrl: request.userPageUrl,
+          aiOverviewContent: aiOverview.summaryText,
+          citedUrls: citedUrls,
+          crawledContent: crawledContent
+        };
 
-        // Log detailed competitor data        
-        validCompetitorPagesForOpenAI.forEach((page, index) => {
-          logger.info(`📄 [GEMINI] Competitor ${index + 1}:`, {
-            url: page.url,
-            contentLength: page.cleanedContent.length,
-            hasTitle: !!page.title,
-            contentPreview: page.cleanedContent.substring(0, 100) + '...',
-          });
-        });
+        // Create userPage object from scraped result for compatibility
+        const userPage = {
+          url: request.userPageUrl,
+          cleanedContent: userPageResult.success ? (userPageResult.content || '') : '',
+          headings: userPageResult.headings || [],
+          title: userPageResult.title || '',
+          metaDescription: userPageResult.metaDescription || ''
+        };
 
-        logger.info(`🚀 [GEMINI] Calling Gemini analysis service...`);
-        
-        analysisResult = await openaiService.analyzeContentGap({
+        // Create competitorPages from scraped results for compatibility
+        const competitorPages = competitorResults.map(result => ({
+          url: result.url,
+          cleanedContent: result.success ? (result.content || '') : '',
+          headings: result.headings || [],
+          title: result.title || '',
+          metaDescription: result.metaDescription || ''
+        }));
+
+        // Construct GeminiInput object for the service - using new v6.0 approach
+        const geminiInput = {
           targetKeyword: request.targetKeyword,
-          userPage: {
-            ...userPageForOpenAI,
-            cleanedContent: userPageForOpenAI.cleanedContent || '' // Corrected
-          },
-          aiOverview,
-          competitorPages: validCompetitorPagesForOpenAI,
-          jobId: analysisId  // 使用 analysisId 作為 jobId 進行成本追蹤
-        });
+          aiOverview: aiOverview,
+          userPage: userPage,
+          competitorPages: competitorPages,
+          jobId: analysisId,
+          // v6.0 prompt data
+          promptData: promptData
+        };
 
-        logger.info(`✅ [GEMINI] AI analysis completed successfully`);
+        const baseResult = await geminiService.analyzeContentGap(geminiInput);
         
-        // Validate Claude.md analysis result structure
-        this.validateClaudeAnalysisResult(analysisResult, analysisId);
-        
+        // Add metadata to convert AnalysisReport to AnalysisReportWithMetadata
+        analysisResult = {
+          ...baseResult,
+          analysisId,
+          timestamp: new Date().toISOString(),
+          aiOverviewData: aiOverview,
+          competitorUrls: aiOverview.references,
+          processingSteps,
+          usedFallbackData: false
+        };
+
+        logger.info(`✅ [GEMINI] AI analysis completed successfully using v6.0 workflow`);
+
         processingSteps.aiAnalysisStatus = 'completed';
       } catch (error: any) {
         logger.error(`❌ [GEMINI] CRITICAL: AI analysis failed:`, {
@@ -313,87 +269,27 @@ class AnalysisService {
           analysisId,
           targetKeyword: request.targetKeyword,
         });
-        
-        logger.error(`🚨 [GEMINI] Analysis failure details:`, {
-          userPageAvailable: !!userPageForOpenAI.cleanedContent,
-          competitorPagesCount: competitorPagesForOpenAI.filter(page => page.cleanedContent).length,
-          aiOverviewAvailable: !!aiOverview,
-        });
-        
+
         processingSteps.aiAnalysisStatus = 'failed';
 
         logger.warn(`🔄 [GEMINI] FALLBACK: Generating basic analysis due to Gemini failure`);
         // Provide a basic fallback analysis
-        analysisResult = this.generateFallbackClaudeAnalysis(request.targetKeyword, aiOverview);
+        analysisResult = this.generateFallbackAnalysis(request.targetKeyword, aiOverview); // Renamed fallback function
       }
 
       this.updateStatus(analysisId, 'processing', 90);
 
-      // Step 6: Convert ClaudeAnalysisReport to AnalysisResult and prepare final result with enhanced data
-      logger.info('Converting ClaudeAnalysisReport to AnalysisResult', {
+      // Step 5: Prepare final result with enhanced data (now Phase 4 in new workflow)
+      logger.info('Preparing final AnalysisReport', {
         analysisId,
-        websiteAssessment: !!analysisResult.websiteAssessment,
+        hasStrategyAndPlan: !!analysisResult.strategyAndPlan,
+        p1ImmediateLength: analysisResult.strategyAndPlan?.p1_immediate?.length || 0,
+        hasWebsiteAssessment: !!analysisResult.websiteAssessment,
         contentGapsLength: analysisResult.websiteAssessment?.contentGaps?.length || 0,
-        strategyAndPlan: !!analysisResult.strategyAndPlan,
-        p1ImmediateLength: analysisResult.strategyAndPlan?.p1_immediate?.length || 0
       });
 
-      const result: AnalysisResult = {
-        // Convert ClaudeAnalysisReport to AnalysisResult format
-        executiveSummary: {
-          mainReasonForExclusion: analysisResult.websiteAssessment?.contentGaps?.[0] || 'No specific exclusion reason identified',
-          topPriorityAction: analysisResult.strategyAndPlan?.p1_immediate?.[0]?.recommendation || 'No immediate action identified'
-        },
-        contentGapAnalysis: {
-          missingTopics: (analysisResult.websiteAssessment?.contentGaps || []).map(gap => ({
-            topic: gap,
-            description: gap,
-            importance: 'medium'
-          })),
-          missingEntities: []
-        },
-        eatAnalysis: {
-          experience: { userScore: 3, competitorAverage: 4, gaps: [], opportunities: [] },
-          expertise: { userScore: 3, competitorAverage: 4, gaps: [], opportunities: [] },
-          authoritativeness: { userScore: 3, competitorAverage: 4, gaps: [], opportunities: [] },
-          trustworthiness: { userScore: 3, competitorAverage: 4, gaps: [], opportunities: [] }
-        },
-        actionablePlan: {
-          immediate: analysisResult.strategyAndPlan.p1_immediate.map(item => ({
-            action: item.recommendation,
-            title: item.recommendation.substring(0, 50),
-            description: item.recommendation,
-            impact: 'high' as const,
-            effort: 'medium' as const,
-            timeline: '1-2 weeks',
-            implementation: item.recommendation, // Keep as description/guidance
-            geminiPrompt: item.geminiPrompt, // Preserve the actual Gemini prompt
-            expectedOutcome: 'Improved content relevance'
-          })),
-          shortTerm: analysisResult.strategyAndPlan.p2_mediumTerm.map(item => ({
-            action: item.recommendation,
-            title: item.recommendation.substring(0, 50),
-            description: item.recommendation,
-            impact: 'high' as const,
-            effort: 'high' as const,
-            timeline: '1-3 months',
-            implementation: item.recommendation, // Keep as description/guidance
-            geminiPrompt: item.geminiPrompt, // Preserve the actual Gemini prompt
-            expectedOutcome: 'Enhanced content strategy'
-          })),
-          longTerm: analysisResult.strategyAndPlan.p3_longTerm.map(item => ({
-            action: item.recommendation,
-            title: item.recommendation.substring(0, 50),
-            description: item.recommendation,
-            impact: 'medium' as const,
-            effort: 'high' as const,
-            timeline: '3-6 months',
-            implementation: item.recommendation, // Keep as description/guidance
-            geminiPrompt: item.geminiPrompt, // Preserve the actual Gemini prompt
-            expectedOutcome: 'Long-term authority building'
-          })),
-        },
-        reportFooter: analysisResult.reportFooter,
+      const finalResult = {
+        ...analysisResult, // Directly use the analysisResult as it's already AnalysisReport
         analysisId,
         timestamp: new Date().toISOString(),
         aiOverviewData: {
@@ -403,43 +299,33 @@ class AnalysisService {
         competitorUrls: uniqueCompetitorUrls,
         processingSteps,
         usedFallbackData: aiOverview.fallbackUsed || userPageFallbackUsed || false,
-        refinementSuccessful,
         qualityAssessment: {
-          score: 0,
+          score: 0, // Will be calculated below
           level: this.assessAnalysisQuality(
-            processingSteps, 
-            competitorResults.filter(r => r.success).length, // Pass actual successful scrapes
-            uniqueCompetitorUrls.length, 
-            refinementSuccessful
+            processingSteps,
+            competitorResults.filter(r => r.success).length,
+            uniqueCompetitorUrls.length
           ),
           completedSteps: Object.values(processingSteps).filter(status => status === 'completed').length,
-          totalSteps: 5,
+          totalSteps: 4, // Changed from 5 to 4 stages
           criticalFailures: Object.values(processingSteps).filter(status => status === 'failed').length,
-          fallbacksUsed: []
+          fallbacksUsed: [] // This needs more sophisticated tracking if needed
         }
       };
 
-      // Log final result structure for debugging
-      logger.info('Final AnalysisResult created', {
-        analysisId,
-        hasExecutiveSummary: !!result.executiveSummary,
-        mainReasonForExclusion: result.executiveSummary?.mainReasonForExclusion,
-        topPriorityAction: result.executiveSummary?.topPriorityAction
-      });
-      
       // Calculate score based on quality level
-      switch (result.qualityAssessment!.level) {
-        case 'excellent': result.qualityAssessment!.score = 90; break;
-        case 'good': result.qualityAssessment!.score = 75; break;
-        case 'fair': result.qualityAssessment!.score = 60; break;
-        case 'poor': result.qualityAssessment!.score = 30; break;
+      switch (finalResult.qualityAssessment!.level) {
+        case 'excellent': finalResult.qualityAssessment!.score = 90; break;
+        case 'good': finalResult.qualityAssessment!.score = 75; break;
+        case 'fair': finalResult.qualityAssessment!.score = 60; break;
+        case 'poor': finalResult.qualityAssessment!.score = 30; break;
       }
 
       // Store result
-      this.analysisResults.set(analysisId, result);
+      this.analysisResults.set(analysisId, finalResult);
       this.updateStatus(analysisId, 'completed', 100);
 
-      return result;
+      return finalResult;
     } catch (error: any) {
       logger.error(`Analysis failed for ${analysisId}`, error);
       this.updateStatus(analysisId, 'failed', 0, error.message);
@@ -451,7 +337,7 @@ class AnalysisService {
     return this.analysisStatus.get(analysisId) || null;
   }
   
-  async getAnalysisResult(analysisId: string): Promise<AnalysisResult | null> {
+  async getAnalysisResult(analysisId: string): Promise<any | null> {
     return this.analysisResults.get(analysisId) || null;
   }
   
@@ -475,8 +361,7 @@ class AnalysisService {
   private assessAnalysisQuality(
     processingSteps: any,
     successfulCompetitors: number,
-    totalCompetitors: number,
-    refinementSuccessful: boolean
+    totalCompetitors: number
   ): 'excellent' | 'good' | 'fair' | 'poor' {
     let score = 0;
     
@@ -490,8 +375,7 @@ class AnalysisService {
     const competitorSuccessRate = totalCompetitors > 0 ? successfulCompetitors / totalCompetitors : 0;
     score += Math.floor(competitorSuccessRate * 25);
     
-    // Content refinement success
-    if (refinementSuccessful) score += 15;
+    
     
     // AI analysis success
     if (processingSteps.aiAnalysisStatus === 'completed') score += 10;
@@ -503,9 +387,9 @@ class AnalysisService {
   }
 
   /**
-   * Generate a basic fallback ClaudeAnalysisReport when AI analysis fails
+   * Generate a basic fallback AnalysisReport when AI analysis fails
    */
-  private generateFallbackClaudeAnalysis(targetKeyword: string, _aiOverview: any): ClaudeAnalysisReport {
+  private generateFallbackAnalysis(targetKeyword: string, _aiOverview: any): AnalysisReportWithMetadata {
     return {
       strategyAndPlan: {
         p1_immediate: [
@@ -532,66 +416,16 @@ class AnalysisService {
         pageExperience: '無法評估',
         structuredDataRecs: '無建議'
       },
-      reportFooter: '本報告由於分析過程中遇到技術問題，僅提供基礎建議。建議重新執行完整分析以獲得更詳細的洞察。'
+      reportFooter: '本報告由於分析過程中遇到技術問題，僅提供基礎建議。建議重新執行完整分析以獲得更詳細的洞察。',
+      
+      // Required metadata fields
+      analysisId: 'fallback-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      usedFallbackData: true
     };
   }
 
-  /**
-   * Validates that the Claude.md analysis result has the required structure
-   */
-  private validateClaudeAnalysisResult(result: any, analysisId: string): void {
-    const errors: string[] = [];
-
-    // Check required top-level fields
-    if (!result.strategyAndPlan) errors.push('strategyAndPlan is missing');
-    if (!result.keywordIntent) errors.push('keywordIntent is missing');
-    if (!result.aiOverviewAnalysis) errors.push('aiOverviewAnalysis is missing');
-    if (!result.websiteAssessment) errors.push('websiteAssessment is missing');
-    if (!result.reportFooter) errors.push('reportFooter is missing');
-
-    // Check strategy and plan structure
-    if (result.strategyAndPlan) {
-      if (!Array.isArray(result.strategyAndPlan.p1_immediate)) {
-        errors.push('strategyAndPlan.p1_immediate must be an array');
-      } else {
-        result.strategyAndPlan.p1_immediate.forEach((item: any, index: number) => {
-          if (!item.recommendation) errors.push(`p1_immediate[${index}].recommendation is missing`);
-          if (!item.geminiPrompt) errors.push(`p1_immediate[${index}].geminiPrompt is missing`);
-        });
-      }
-      
-      if (!Array.isArray(result.strategyAndPlan.p2_mediumTerm)) {
-        errors.push('strategyAndPlan.p2_mediumTerm must be an array');
-      }
-      
-      if (!Array.isArray(result.strategyAndPlan.p3_longTerm)) {
-        errors.push('strategyAndPlan.p3_longTerm must be an array');
-      }
-    }
-
-    // Check website assessment
-    if (result.websiteAssessment && !Array.isArray(result.websiteAssessment.contentGaps)) {
-      errors.push('websiteAssessment.contentGaps must be an array');
-    }
-
-    // Log validation results
-    if (errors.length > 0) {
-      logger.warn('Claude.md analysis result validation failed', {
-        analysisId,
-        errors,
-        hasStrategyAndPlan: !!result.strategyAndPlan,
-        hasWebsiteAssessment: !!result.websiteAssessment
-      });
-    } else {
-      logger.info('Claude.md analysis result validation passed', {
-        analysisId,
-        p1Count: result.strategyAndPlan?.p1_immediate?.length || 0,
-        p2Count: result.strategyAndPlan?.p2_mediumTerm?.length || 0,
-        p3Count: result.strategyAndPlan?.p3_longTerm?.length || 0,
-        contentGapsCount: result.websiteAssessment?.contentGaps?.length || 0
-      });
-    }
-  }
+  
 
   /**
    * Robust URL comparison that handles common variations

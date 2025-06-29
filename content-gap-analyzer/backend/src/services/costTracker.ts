@@ -22,7 +22,6 @@ interface CostEstimate {
 
 interface JobCostBreakdown {
   jobId: string;
-  contentRefinement: CostEstimate;
   mainAnalysis: CostEstimate;
   total: CostEstimate;
   timestamp: string;
@@ -50,31 +49,6 @@ class CostTracker {
     };
   }
 
-  /**
-   * 記錄內容精煉步驟的成本
-   */
-  recordContentRefinementCost(jobId: string, inputTokens: number, outputTokens: number): void {
-    const cost = this.estimateApiCallCost(inputTokens, outputTokens);
-    
-    let jobCost = this.jobCosts.get(jobId);
-    if (!jobCost) {
-      jobCost = {
-        jobId,
-        contentRefinement: cost,
-        mainAnalysis: this.getZeroCost(),
-        total: cost,
-        timestamp: new Date().toISOString()
-      };
-    } else {
-      jobCost.contentRefinement = this.addCosts(jobCost.contentRefinement, cost);
-      jobCost.total = this.addCosts(jobCost.contentRefinement, jobCost.mainAnalysis);
-    }
-
-    this.jobCosts.set(jobId, jobCost);
-    this.addToDailyCost(cost.totalCost);
-
-    logger.info(`Content refinement cost for job ${jobId}: $${cost.totalCost.toFixed(4)} (${inputTokens} in, ${outputTokens} out)`);
-  }
 
   /**
    * 記錄主分析步驟的成本
@@ -86,14 +60,13 @@ class CostTracker {
     if (!jobCost) {
       jobCost = {
         jobId,
-        contentRefinement: this.getZeroCost(),
         mainAnalysis: cost,
         total: cost,
         timestamp: new Date().toISOString()
       };
     } else {
       jobCost.mainAnalysis = this.addCosts(jobCost.mainAnalysis, cost);
-      jobCost.total = this.addCosts(jobCost.contentRefinement, jobCost.mainAnalysis);
+      jobCost.total = jobCost.mainAnalysis; // Only main analysis in v6.0
     }
 
     this.jobCosts.set(jobId, jobCost);
@@ -191,16 +164,6 @@ class CostTracker {
   /**
    * 私有輔助方法
    */
-  private getZeroCost(): CostEstimate {
-    return {
-      inputTokens: 0,
-      outputTokens: 0,
-      inputCost: 0,
-      outputCost: 0,
-      totalCost: 0,
-      currency: 'USD'
-    };
-  }
 
   private addCosts(cost1: CostEstimate, cost2: CostEstimate): CostEstimate {
     return {

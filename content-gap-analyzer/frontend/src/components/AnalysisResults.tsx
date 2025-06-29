@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { AnalysisResult, JobStatus, MissingTopic, MissingEntity, ActionItemV5 } from '../types';
-import { Loader2, XCircle, TrendingUp, Users, Award, AlertTriangle, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { AnalysisReportWithMetadata, JobStatus, ActionItem } from '../types';
+import { Loader2, XCircle, AlertTriangle, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import AIOverviewDisplay from './AIOverviewDisplay';
 import ReferencesList from './ReferencesList';
 import PriorityBlock from './PriorityBlock';
-import ActionItem from './ActionItem';
+import { ActionItemComponent } from './ActionItem';
 
 interface AnalysisResultsProps {
   analysisId?: string;
   status?: JobStatus;
-  result?: AnalysisResult;
+  result?: AnalysisReportWithMetadata;
   targetKeyword?: string;
 }
 
@@ -46,7 +46,19 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
 
   if (!result) return null;
 
-  const { executiveSummary, contentGapAnalysis, eatAnalysis, actionablePlan, competitorInsights, successMetrics } = result;
+  // Check if this is the new v6.0 format (AnalysisReport) or legacy v5.1 format
+  const isV6Format = 'strategyAndPlan' in result;
+  
+  if (!isV6Format) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-lg">
+        <h3 className="text-yellow-800 font-semibold mb-2">⚠️ Legacy Analysis Format Detected</h3>
+        <p className="text-yellow-700">
+          This analysis result uses the legacy v5.1 format. Please re-run the analysis to get the new v6.0 format with improved insights.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -77,7 +89,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
           <h2 className="section-title">🔄 處理步驟詳情</h2>
           
           <div className="processing-steps-grid">
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="step-item">
                 <div className="flex items-center">
                   <div className={`step-status-indicator ${result.processingSteps.serpApiStatus}`}></div>
@@ -101,21 +113,11 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
                 </div>
                 <span className="step-status-text">{result.processingSteps.competitorPagesStatus}</span>
               </div>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="step-item">
-                <div className="flex items-center">
-                  <div className={`step-status-indicator ${result.processingSteps.contentRefinementStatus}`}></div>
-                  <span className="step-name">內容精煉</span>
-                </div>
-                <span className="step-status-text">{result.processingSteps.contentRefinementStatus}</span>
-              </div>
               
               <div className="step-item">
                 <div className="flex items-center">
                   <div className={`step-status-indicator ${result.processingSteps.aiAnalysisStatus}`}></div>
-                  <span className="step-name">AI 差距分析</span>
+                  <span className="step-name">AI 分析</span>
                 </div>
                 <span className="step-status-text">{result.processingSteps.aiAnalysisStatus}</span>
               </div>
@@ -161,244 +163,179 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
         </div>
       )}
 
-      {/* Executive Summary */}
-      {executiveSummary ? (
+      {/* Strategy and Action Plan - v6.0 Format */}
+      {result.strategyAndPlan && (
         <div className="report-section">
-          <h2 className="section-title">執行摘要</h2>
-          <div className="content-block">
-            <p><strong>主要排除原因:</strong> {executiveSummary.mainReasonForExclusion}</p>
-            <p><strong>優先行動:</strong> {executiveSummary.topPriorityAction}</p>
-            {executiveSummary.confidenceScore && (
-              <p><strong>信心分數:</strong> {executiveSummary.confidenceScore}%</p>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="report-section">
-          <h2 className="section-title">執行摘要</h2>
-          <div className="content-block">
-            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md">
-              <p className="text-yellow-800">
-                <strong>⚠️ 執行摘要數據不完整</strong>
-              </p>
-              <p className="text-yellow-700 text-sm mt-2">
-                分析結果可能不完整，請重新執行分析或檢查後端服務狀態。
-              </p>
-            </div>
-          </div>
+          <h2 className="section-title">🎯 戰略與改善計畫</h2>
+          
+          {/* P1 - Immediate Actions */}
+          {result.strategyAndPlan.p1_immediate && result.strategyAndPlan.p1_immediate.length > 0 && (
+            <PriorityBlock priority="P1" title="立即執行 (高影響力、低執行難度)">
+              {result.strategyAndPlan.p1_immediate.map((action: ActionItem, index: number) => (
+                <ActionItemComponent
+                  key={index}
+                  title={`P1-${index + 1}`}
+                  description={action.recommendation}
+                  geminiPrompt={action.geminiPrompt}
+                />
+              ))}
+            </PriorityBlock>
+          )}
+          
+          {/* P2 - Medium Term Actions */}
+          {result.strategyAndPlan.p2_mediumTerm && result.strategyAndPlan.p2_mediumTerm.length > 0 && (
+            <PriorityBlock priority="P2" title="中期規劃 (高影響力、高執行難度)">
+              {result.strategyAndPlan.p2_mediumTerm.map((action: ActionItem, index: number) => (
+                <ActionItemComponent
+                  key={index}
+                  title={`P2-${index + 1}`}
+                  description={action.recommendation}
+                  geminiPrompt={action.geminiPrompt}
+                />
+              ))}
+            </PriorityBlock>
+          )}
+          
+          {/* P3 - Long Term Actions */}
+          {result.strategyAndPlan.p3_longTerm && result.strategyAndPlan.p3_longTerm.length > 0 && (
+            <PriorityBlock priority="P3" title="長期優化 (持續進行)">
+              {result.strategyAndPlan.p3_longTerm.map((action: ActionItem, index: number) => (
+                <ActionItemComponent
+                  key={index}
+                  title={`P3-${index + 1}`}
+                  description={action.recommendation}
+                  geminiPrompt={action.geminiPrompt}
+                />
+              ))}
+            </PriorityBlock>
+          )}
         </div>
       )}
 
-      {/* Content Gap Analysis */}
-      <div className="report-section">
-        <h2 className="section-title">內容差距分析</h2>
-        <div className="grid-3-cols">
-          {/* Missing Topics */}
+      {/* Keyword Intent Analysis - v6.0 Format */}
+      {result.keywordIntent && (
+        <div className="report-section">
+          <h2 className="section-title">🔍 關鍵字意圖分析</h2>
           <div className="content-block">
-            <div className="block-header">
-              <TrendingUp className="icon-small" />
-              <h4 className="block-title">缺失主題</h4>
-              <span className="block-count">{contentGapAnalysis?.missingTopics?.length || 0}</span>
+            <div className="mb-4">
+              <h4 className="block-title">核心搜尋意圖</h4>
+              <p className="text-normal">{result.keywordIntent.coreIntent}</p>
             </div>
             
-            {contentGapAnalysis?.missingTopics && contentGapAnalysis.missingTopics.length > 0 && (
-              <div className="block-content">
-                <p className="block-description">需要補充的主題：</p>
+            {result.keywordIntent.latentIntents && result.keywordIntent.latentIntents.length > 0 && (
+              <div>
+                <h4 className="block-title">潛在搜尋意圖</h4>
                 <ul className="list-unstyled">
-                  {contentGapAnalysis.missingTopics.map((item: MissingTopic, index: number) => (
+                  {result.keywordIntent.latentIntents.map((intent: string, index: number) => (
                     <li key={index}>
                       <span className="list-bullet">•</span>
-                      <strong>{item.topic}</strong>
-                      <p className="list-description">{item.description}</p>
+                      {intent}
                     </li>
                   ))}
                 </ul>
               </div>
             )}
           </div>
-
-          {/* Missing Entities */}
-          <div className="content-block">
-            <div className="block-header">
-              <Users className="icon-small" />
-              <h4 className="block-title">缺失實體</h4>
-              <span className="block-count">{contentGapAnalysis?.missingEntities?.length || 0}</span>
-            </div>
-            
-            {contentGapAnalysis?.missingEntities && contentGapAnalysis.missingEntities.length > 0 && (
-              <div className="block-content">
-                <p className="block-description">需要添加的實體：</p>
-                <div className="entity-list">
-                  {contentGapAnalysis.missingEntities.map((item: MissingEntity, index: number) => (
-                    <div key={index} className="entity-item">
-                      <span className="entity-tag">{item.entity}</span>
-                      <p className="entity-description">{item.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* E-E-A-T Analysis Summary */}
-          <div className="content-block">
-            <div className="block-header">
-              <Award className="icon-small" />
-              <h4 className="block-title">E-E-A-T 分析</h4>
-              <span className="block-count">
-                {eatAnalysis ? Math.round((eatAnalysis.experience.userScore + eatAnalysis.expertise.userScore + eatAnalysis.authoritativeness.userScore + eatAnalysis.trustworthiness.userScore) / 4) : 0}%
-              </span>
-            </div>
-            
-            {eatAnalysis && (
-              <div className="block-content">
-                <div className="score-item">
-                  <span>經驗 (E)</span>
-                  <span className="score-value">{eatAnalysis.experience.userScore}%</span>
-                </div>
-                <div className="score-item">
-                  <span>專業 (E)</span>
-                  <span className="score-value">{eatAnalysis.expertise.userScore}%</span>
-                </div>
-                <div className="score-item">
-                  <span>權威 (A)</span>
-                  <span className="score-value">{eatAnalysis.authoritativeness.userScore}%</span>
-                </div>
-                <div className="score-item">
-                  <span>信任 (T)</span>
-                  <span className="score-value">{eatAnalysis.trustworthiness.userScore}%</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Actionable Plan */}
-      <div>
-        <h3 className="font-semibold text-lg mb-4">行動計畫</h3>
-
-        {actionablePlan?.immediate && actionablePlan.immediate.length > 0 && (
-          <PriorityBlock priority="P1" title="立即行動 (1-2 週)">
-            {actionablePlan.immediate.map((action: ActionItemV5, index: number) => (
-              <ActionItem
-                key={index}
-                title={action.title}
-                description={action.description}
-                geminiPrompt={action.geminiPrompt}
-                implementation={action.implementation}
-                specificSteps={action.specificSteps}
-                measurableGoals={action.measurableGoals}
-              />
-            ))}
-          </PriorityBlock>
-        )}
-
-        {actionablePlan?.shortTerm && actionablePlan.shortTerm.length > 0 && (
-          <PriorityBlock priority="P2" title="短期計劃 (1-2 個月)">
-            {actionablePlan.shortTerm.map((action: ActionItemV5, index: number) => (
-              <ActionItem
-                key={index}
-                title={action.title}
-                description={action.description}
-                geminiPrompt={action.geminiPrompt}
-                implementation={action.implementation}
-                specificSteps={action.specificSteps}
-                measurableGoals={action.measurableGoals}
-              />
-            ))}
-          </PriorityBlock>
-        )}
-
-        {actionablePlan?.longTerm && actionablePlan.longTerm.length > 0 && (
-          <PriorityBlock priority="P3" title="長期策略 (3+ 個月)">
-            {actionablePlan.longTerm.map((action: ActionItemV5, index: number) => (
-              <ActionItem
-                key={index}
-                title={action.title}
-                description={action.description}
-                geminiPrompt={action.geminiPrompt}
-                implementation={action.implementation}
-                specificSteps={action.specificSteps}
-                measurableGoals={action.measurableGoals}
-              />
-            ))}
-          </PriorityBlock>
-        )}
-      </div>
-
-      {/* Competitor Insights */}
-      {competitorInsights && (
-        <div className="report-section">
-          <h2 className="section-title">競爭對手洞察</h2>
-          
-          {competitorInsights.topPerformingCompetitor && (
-            <div className="content-block">
-              <h3 className="block-title">表現最佳競爭對手</h3>
-              <div className="content-details">
-                <p className="text-normal">{competitorInsights.topPerformingCompetitor.url}</p>
-                <div className="detail-group">
-                  <span className="detail-label">優勢:</span>
-                  <ul className="list-unstyled">
-                    {competitorInsights.topPerformingCompetitor.strengths.map((strength: string, index: number) => (
-                      <li key={index}>• {strength}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="detail-group">
-                  <span className="detail-label">關鍵差異化因素:</span>
-                  <ul className="list-unstyled">
-                    {competitorInsights.topPerformingCompetitor.keyDifferentiators.map((diff: string, index: number) => (
-                      <li key={index}>• {diff}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {competitorInsights.commonPatterns && competitorInsights.commonPatterns.length > 0 && (
-            <div className="content-block">
-              <h3 className="block-title">共同模式</h3>
-              <ul className="list-unstyled">
-                {competitorInsights.commonPatterns.map((pattern: string, index: number) => (
-                  <li key={index}>• {pattern}</li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       )}
-
-      {/* Success Metrics */}
-      {successMetrics && (
+      
+      {/* AI Overview Analysis - v6.0 Format */}
+      {result.aiOverviewAnalysis && (
         <div className="report-section">
-          <h2 className="section-title">成功指標</h2>
-          
+          <h2 className="section-title">🤖 AI Overview 逆向分析</h2>
           <div className="content-block">
-            <div className="detail-group">
-              <span className="detail-label">主要 KPI:</span>
-              <span className="text-normal">{successMetrics.primaryKPI}</span>
+            <div className="mb-4">
+              <h4 className="block-title">AI 摘要內容</h4>
+              <p className="text-normal">{result.aiOverviewAnalysis.summary}</p>
             </div>
             
-            {successMetrics.trackingRecommendations && successMetrics.trackingRecommendations.length > 0 && (
-              <div className="detail-group">
-                <span className="detail-label">追蹤建議:</span>
+            <div>
+              <h4 className="block-title">呈現方式分析</h4>
+              <p className="text-normal">{result.aiOverviewAnalysis.presentationAnalysis}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Cited Source Analysis - v6.0 Format */}
+      {result.citedSourceAnalysis && result.citedSourceAnalysis.length > 0 && (
+        <div className="report-section">
+          <h2 className="section-title">📚 引用來源分析</h2>
+          <div className="space-y-4">
+            {result.citedSourceAnalysis.map((source, index) => (
+              <div key={index} className="content-block">
+                <h4 className="block-title">{source.url}</h4>
+                <div className="space-y-2">
+                  <div>
+                    <span className="detail-label">內容摘要:</span>
+                    <p className="text-normal">{source.contentSummary}</p>
+                  </div>
+                  <div>
+                    <span className="detail-label">貢獻內容:</span>
+                    <p className="text-normal">{source.contribution}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mt-3">
+                    <div>
+                      <span className="detail-label">經驗 (E):</span>
+                      <p className="text-sm">{source.eeatAnalysis.experience}</p>
+                    </div>
+                    <div>
+                      <span className="detail-label">專業 (E):</span>
+                      <p className="text-sm">{source.eeatAnalysis.expertise}</p>
+                    </div>
+                    <div>
+                      <span className="detail-label">權威 (A):</span>
+                      <p className="text-sm">{source.eeatAnalysis.authoritativeness}</p>
+                    </div>
+                    <div>
+                      <span className="detail-label">信任 (T):</span>
+                      <p className="text-sm">{source.eeatAnalysis.trustworthiness}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Website Assessment - v6.0 Format */}
+      {result.websiteAssessment && (
+        <div className="report-section">
+          <h2 className="section-title">🌐 網站評估</h2>
+          <div className="content-block">
+            <div className="mb-4">
+              <h4 className="block-title">內容摘要</h4>
+              <p className="text-normal">{result.websiteAssessment.contentSummary}</p>
+            </div>
+            
+            {result.websiteAssessment.contentGaps && result.websiteAssessment.contentGaps.length > 0 && (
+              <div className="mb-4">
+                <h4 className="block-title">內容缺口</h4>
                 <ul className="list-unstyled">
-                  {successMetrics.trackingRecommendations.map((rec: string, index: number) => (
-                    <li key={index}>• {rec}</li>
+                  {result.websiteAssessment.contentGaps.map((gap: string, index: number) => (
+                    <li key={index}>
+                      <span className="list-bullet">•</span>
+                      {gap}
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
             
-            <div className="detail-group">
-              <span className="detail-label">預期時程:</span>
-              <span className="text-normal">{successMetrics.timeframe}</span>
+            <div className="mb-4">
+              <h4 className="block-title">頁面體驗</h4>
+              <p className="text-normal">{result.websiteAssessment.pageExperience}</p>
+            </div>
+            
+            <div>
+              <h4 className="block-title">結構化資料建議</h4>
+              <p className="text-normal">{result.websiteAssessment.structuredDataRecs}</p>
             </div>
           </div>
         </div>
       )}
+
 
       {/* Report Footer */}
       {result.reportFooter && (
@@ -529,7 +466,7 @@ const FailedAnalysisDisplay: React.FC<{ status: JobStatus; targetKeyword?: strin
 };
 
 // Error Details Section Component
-const ErrorDetailsSection: React.FC<{ result: AnalysisResult; status?: JobStatus }> = ({ result, status }) => {
+const ErrorDetailsSection: React.FC<{ result: AnalysisReportWithMetadata; status?: JobStatus }> = ({ result, status }) => {
   const [showErrorDetails, setShowErrorDetails] = useState(false);
   
   // Check if there are any errors or failures in the analysis
@@ -538,7 +475,6 @@ const ErrorDetailsSection: React.FC<{ result: AnalysisResult; status?: JobStatus
     result.processingSteps?.serpApiStatus === 'failed' ||
     result.processingSteps?.userPageStatus === 'failed' ||
     result.processingSteps?.competitorPagesStatus === 'failed' ||
-    result.processingSteps?.contentRefinementStatus === 'failed' ||
     result.processingSteps?.aiAnalysisStatus === 'failed' ||
     (result.qualityAssessment && result.qualityAssessment.score < 70)
   );
@@ -552,8 +488,6 @@ const ErrorDetailsSection: React.FC<{ result: AnalysisResult; status?: JobStatus
           return '用戶頁面爬取失敗，可能是網頁無法訪問或被阻擋';
         case 'competitorPagesStatus':
           return '競爭對手頁面爬取失敗，影響分析完整性';
-        case 'contentRefinementStatus':
-          return '內容精煉處理失敗，使用原始內容進行分析';
         case 'aiAnalysisStatus':
           return 'AI 分析失敗，使用備用分析方案';
         default:
@@ -664,7 +598,6 @@ const ErrorDetailsSection: React.FC<{ result: AnalysisResult; status?: JobStatus
               <p>• 分析ID: {result.analysisId}</p>
               <p>• 時間戳記: {result.timestamp}</p>
               <p>• 使用備用資料: {result.usedFallbackData ? '是' : '否'}</p>
-              <p>• 精煉成功: {result.refinementSuccessful ? '是' : '否'}</p>
               {result.qualityAssessment && (
                 <p>• 品質評分: {result.qualityAssessment.score}/100 ({result.qualityAssessment.completedSteps}/{result.qualityAssessment.totalSteps} 步驟完成)</p>
               )}

@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import logger from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
-import { OpenAIInput, PageContent, ClaudeAnalysisReport } from '../types';
+import { GeminiInput, AnalysisReport } from '../types';
 // import { costTracker } from './costTracker'; // TODO: Implement cost tracking for Gemini
 import { promptService } from './promptService';
 
@@ -27,12 +27,36 @@ class GeminiService {
     }
   }
   
-  async analyzeContentGap(input: OpenAIInput): Promise<ClaudeAnalysisReport> {
+  async analyzeContentGap(input: GeminiInput): Promise<AnalysisReport> {
     this.initializeIfNeeded();
     
-    // v2.0 使用標準化 Prompt 服務
-    const analysisData = this.buildAnalysisData(input);
-    const prompt = promptService.renderPrompt('main_analysis', analysisData);
+    // v6.0 使用新的 prompt 資料結構或降級到舊版本
+    let prompt: string | null;
+    
+    if (input.promptData) {
+      // v6.0 新版本：直接使用預先準備的 prompt 資料
+      logger.info('Using v6.0 prompt data structure with variables:', {
+        hasTargetKeyword: !!input.promptData.targetKeyword,
+        hasUserPageUrl: !!input.promptData.userPageUrl,
+        hasAiOverviewContent: !!input.promptData.aiOverviewContent,
+        hasCitedUrls: !!input.promptData.citedUrls,
+        hasCrawledContent: !!input.promptData.crawledContent,
+        targetKeyword: input.promptData.targetKeyword,
+        userPageUrl: input.promptData.userPageUrl
+      });
+      prompt = promptService.renderPrompt('main_analysis', input.promptData);
+    } else {
+      // 降級到舊版本 - 但現在使用 v6.0 格式
+      logger.info('Falling back to v5.1 data structure, but converting to v6.0 format');
+      const analysisData = this.buildAnalysisData(input);
+      logger.info('Built v6.0 format data for fallback:', {
+        targetKeyword: analysisData.targetKeyword,
+        userPageUrl: analysisData.userPageUrl,
+        aiOverviewLength: analysisData.aiOverviewContent?.length || 0,
+        crawledContentLength: analysisData.crawledContent?.length || 0
+      });
+      prompt = promptService.renderPrompt('main_analysis', analysisData);
+    }
     
     if (!prompt) {
       logger.error('Failed to render main analysis prompt');
@@ -74,6 +98,22 @@ class GeminiService {
         throw new Error('Invalid JSON response from Gemini');
       }
       
+      // Validate response content matches input keyword
+      const responseValidation = this.validateResponseContent(analysisResult, input.targetKeyword);
+      if (!responseValidation.isValid) {
+        logger.error('Response content validation failed:', responseValidation);
+        logger.error('Response contains content for wrong keyword. This indicates template variable substitution failure.');
+        
+        // Log sample content for debugging
+        if (analysisResult.strategyAndPlan?.p1_immediate?.[0]?.recommendation) {
+          logger.error('Sample recommendation content:', 
+            analysisResult.strategyAndPlan.p1_immediate[0].recommendation.substring(0, 200)
+          );
+        }
+      } else {
+        logger.info('Response content validation passed:', responseValidation);
+      }
+      
       logger.info('Gemini analysis completed successfully');
       return analysisResult;
     } catch (error: any) {
@@ -105,63 +145,126 @@ class GeminiService {
   
 
   /**
-   * 構建分析數據用於 Prompt v2.0 (新方法)
+   * 構建分析數據用於 Prompt v2.0 (新方法) - 修正為 v6.0 格式
    */
-  private buildAnalysisData(input: OpenAIInput): Record<string, any> {
-    // 詳細記錄構建的分析數據
-    const analysisContext = {
-      targetKeyword: input.targetKeyword,
-      aiOverview: {
-        text: input.aiOverview.summaryText || '',
-        references: input.aiOverview.references || []
+  private buildAnalysisData(input: GeminiInput): Record<string, any> {
+    // 構建爬取內容字符串
+    let crawledContent = '';
+    const allScrapedPages = [input.userPage, ...input.competitorPages];
+
+    allScrapedPages.forEach(page => {
+      if (page.cleanedContent) {
+        crawledContent += `--- START OF CONTENT FOR ${page.url} ---\n${page.cleanedContent}\n--- END OF CONTENT FOR ${page.url} ---\n\n`;
       }
-    };
-
-    const userPageData = {
-      url: input.userPage.url,
-      essentialsSummary: input.userPage.cleanedContent || ''
-    };
-
-    logger.debug('Inspecting userPageData.essentialsSummary in buildAnalysisData:', {
-      summary: userPageData.essentialsSummary,
-      typeOfSummary: typeof userPageData.essentialsSummary,
-      summaryLength: userPageData.essentialsSummary.length,
     });
 
-    const competitorPagesData = input.competitorPages.map((page: PageContent) => ({
-      url: page.url,
-      essentialsSummary: page.cleanedContent || ''
-    }));
+    // 準備引用網址列表
+    const citedUrls = (input.aiOverview.references || []).join('\n');
+
+    // 構建 v6.0 格式的 promptData
+    const promptData = {
+      targetKeyword: input.targetKeyword,
+      userPageUrl: input.userPage.url,
+      aiOverviewContent: input.aiOverview.summaryText || '',
+      citedUrls: citedUrls,
+      crawledContent: crawledContent
+    };
 
     // 記錄構建的數據
-    logger.info('Building analysis data for OpenAI', {
+    logger.info('Building v6.0 format analysis data for fallback', {
       targetKeyword: input.targetKeyword,
-      userPageSummaryLength: userPageData.essentialsSummary.length,
-      competitorCount: competitorPagesData.length,
-      aiOverviewTextLength: analysisContext.aiOverview.text.length
+      userPageUrl: input.userPage.url,
+      aiOverviewLength: promptData.aiOverviewContent.length,
+      competitorCount: input.competitorPages.length,
+      crawledContentLength: crawledContent.length,
+      citedUrlsCount: input.aiOverview.references?.length || 0
     });
 
     // 記錄用戶頁面摘要預覽
-    if (userPageData.essentialsSummary) {
-      logger.debug('User page essentials summary preview:', {
-        preview: userPageData.essentialsSummary.substring(0, 150) + '...'
+    if (input.userPage.cleanedContent) {
+      logger.debug('User page content preview:', {
+        url: input.userPage.url,
+        preview: input.userPage.cleanedContent.substring(0, 150) + '...'
       });
     }
 
     // 記錄競爭對手摘要預覽
-    competitorPagesData.forEach((competitor: { url: string; essentialsSummary: string }, index: number) => {
-      if (competitor.essentialsSummary) {
-        logger.debug(`Competitor ${index} essentials summary preview:`, {
+    input.competitorPages.forEach((competitor, index) => {
+      if (competitor.cleanedContent) {
+        logger.debug(`Competitor ${index} content preview:`, {
           url: competitor.url,
-          preview: competitor.essentialsSummary.substring(0, 150) + '...'
+          preview: competitor.cleanedContent.substring(0, 150) + '...'
         });
       }
     });
 
+    return promptData;
+  }
+
+  /**
+   * 驗證 Gemini 回應內容是否與輸入關鍵字相符
+   */
+  private validateResponseContent(analysisResult: any, targetKeyword: string): {
+    isValid: boolean;
+    reasons: string[];
+    confidence: number;
+  } {
+    const reasons: string[] = [];
+    let positiveMatches = 0;
+    let totalChecks = 0;
+
+    // 檢查策略建議是否包含目標關鍵字
+    if (analysisResult.strategyAndPlan?.p1_immediate?.length > 0) {
+      totalChecks++;
+      const recommendations = analysisResult.strategyAndPlan.p1_immediate
+        .map((item: any) => item.recommendation || '')
+        .join(' ');
+      
+      if (recommendations.includes(targetKeyword)) {
+        positiveMatches++;
+      } else {
+        reasons.push(`P1 recommendations do not contain target keyword "${targetKeyword}"`);
+      }
+    }
+
+    // 檢查關鍵字意圖分析
+    if (analysisResult.keywordIntent?.coreIntent) {
+      totalChecks++;
+      if (analysisResult.keywordIntent.coreIntent.includes(targetKeyword)) {
+        positiveMatches++;
+      } else {
+        reasons.push(`Keyword intent analysis does not contain target keyword "${targetKeyword}"`);
+      }
+    }
+
+    // 檢查網站評估
+    if (analysisResult.websiteAssessment?.contentSummary) {
+      totalChecks++;
+      if (analysisResult.websiteAssessment.contentSummary.includes(targetKeyword)) {
+        positiveMatches++;
+      } else {
+        reasons.push(`Website assessment does not contain target keyword "${targetKeyword}"`);
+      }
+    }
+
+    // 檢查是否包含不相關的關鍵字（如 "SEO優化指南"）
+    const contentText = JSON.stringify(analysisResult);
+    const suspiciousKeywords = ['SEO優化指南', 'SEO optimization guide', '搜尋引擎優化指南'];
+    
+    for (const suspicious of suspiciousKeywords) {
+      if (contentText.includes(suspicious) && !targetKeyword.includes(suspicious)) {
+        reasons.push(`Content contains suspicious unrelated keyword: "${suspicious}"`);
+        totalChecks++;
+      }
+    }
+
+    const confidence = totalChecks > 0 ? (positiveMatches / totalChecks) * 100 : 0;
+    const isValid = confidence >= 50 && reasons.length === 0;
+
     return {
-      analysisContext: JSON.stringify(analysisContext),
-      userPage: JSON.stringify(userPageData),
-      competitorPages: JSON.stringify(competitorPagesData)
+      isValid,
+      reasons,
+      confidence
     };
   }
   
@@ -177,12 +280,12 @@ export const geminiService = {
     return geminiServiceInstance;
   },
   
-  analyzeContentGap(input: OpenAIInput): Promise<ClaudeAnalysisReport> {
+  analyzeContentGap(input: GeminiInput): Promise<AnalysisReport> {
     return this.getInstance().analyzeContentGap(input);
   },
 
   
 };
 
-// Keep backward compatibility with openaiService export
-export const openaiService = geminiService;
+// Export singleton instance for backward compatibility
+export default geminiService;

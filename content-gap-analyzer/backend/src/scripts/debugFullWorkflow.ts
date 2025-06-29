@@ -3,8 +3,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { serpApiService } from '../services/serpApiService';
-import { contentRefinementService } from '../services/contentRefinementService';
-import { openaiService } from '../services/geminiService';
+// import { contentRefinementService } from '../services/contentRefinementService'; // Service removed
+import { geminiService } from '../services/geminiService';
 
 async function debugFullWorkflow() {
   console.log('=== 完整工作流程調試 ===\n');
@@ -66,37 +66,19 @@ async function debugFullWorkflow() {
 
       console.log('✅ 頁面內容準備完成\n');
 
-      // 3. 測試內容精煉
-      console.log('3. 測試內容精煉...');
-      const allPages = [mockUserPage, ...mockCompetitorPages];
-      const refinedContents = await contentRefinementService.refineMultiplePages(allPages);
-      
-      console.log('✅ 內容精煉完成');
-      console.log(`精煉頁面數量: ${refinedContents.length}`);
-      
-      refinedContents.forEach((refined, index) => {
-        console.log(`  頁面 ${index}: 原始長度 ${refined.originalLength}, 精煉長度 ${refined.refinedSummary.length}`);
-        console.log(`  精煉成功: ${refined.refinementSuccess}, 關鍵點數量: ${refined.keyPoints.length}`);
-        console.log(`  精煉預覽: ${refined.refinedSummary.substring(0, 100)}...`);
-      });
+      // 3. 跳過內容精煉（服務已移除）
+      console.log('3. 跳過內容精煉（服務已移除）...');
+      console.log('✅ 使用原始內容進行測試');
       console.log('');
 
       // 4. 測試最終分析
-      console.log('4. 測試 OpenAI 最終分析...');
-      const refinedUserContent = refinedContents[0];
-      const refinedCompetitorContents = refinedContents.slice(1);
+      console.log('4. 測試 Gemini 最終分析...');
 
-      const analysisResult = await openaiService.analyzeContentGap({
+      const analysisResult = await geminiService.analyzeContentGap({
         targetKeyword: keyword,
-        userPage: {
-          ...mockUserPage,
-          cleanedContent: refinedUserContent.refinedSummary
-        },
+        userPage: mockUserPage,
         aiOverview,
-        competitorPages: refinedCompetitorContents.map((refined, index) => ({
-          ...mockCompetitorPages[index],
-          cleanedContent: refined.refinedSummary
-        })),
+        competitorPages: mockCompetitorPages,
         jobId: `debug-full-${i}-${Date.now()}`
       });
 

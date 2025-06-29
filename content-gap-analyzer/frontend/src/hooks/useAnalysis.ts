@@ -2,11 +2,11 @@ import { useState, useCallback, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { analysisApi } from '../services/api';
-import { AnalysisRequest, AnalysisResult, JobStatus } from '../types';
+import { AnalysisRequest, AnalysisReportWithMetadata, JobStatus } from '../types';
 
 export const useAnalysis = () => {
   const [analysisId, setAnalysisId] = useState<string | null>(null);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [result, setResult] = useState<AnalysisReportWithMetadata | null>(null);
   const [currentRequest, setCurrentRequest] = useState<AnalysisRequest | null>(null);
   const queryClient = useQueryClient();
 
@@ -42,8 +42,8 @@ export const useAnalysis = () => {
       // Stop polling
       queryClient.invalidateQueries({ queryKey: ['jobStatus', analysisId] });
       
-      // Set result directly from status data
-      setResult(status.data);
+      // Set result directly from status data (backend returns AnalysisReportWithMetadata)
+      setResult(status.data as AnalysisReportWithMetadata);
       setAnalysisId(null);
       toast.success('分析完成！');
     } else if (status?.status === 'completed_with_errors' && status.data && analysisId) {
@@ -51,7 +51,7 @@ export const useAnalysis = () => {
       // Handle completion with warnings
       queryClient.invalidateQueries({ queryKey: ['jobStatus', analysisId] });
       
-      setResult(status.data);
+      setResult(status.data as AnalysisReportWithMetadata);
       setAnalysisId(null);
       toast.success('分析完成，但有部分警告');
       
