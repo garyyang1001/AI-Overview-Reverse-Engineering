@@ -168,20 +168,51 @@ AI 摘要了什麼？回應了什麼？ 簡要說明【AI Overview】的內容�
 Google AI 為什麼這樣呈現？ 深入分析 Google AI 呈現資訊的方式（例如：它是用條列式、表格、問答形式，還是直接一段話總結？）。從它的呈現方式、語氣和選擇留下的資訊，反推 Google AI 認為「這樣呈現」對使用者來說是最高效、最有價值的答案。這等於是揭示了 Google 眼中「什麼才是好答案」的秘密。
 
 第四部分：Google AI 參考了誰？ (Cited Source Analysis)
-我們會逐一分析【被引用網址列表】中的每一個網址：
-這個網址對 AI 摘要貢獻了什麼內容？
-網址： [被引用網址]
-內容重點： 簡單說明這個網頁主要在講什麼。
-對 AI 摘要的貢獻： 精準分析這個網頁的哪些資訊被 Google AI 摘要採用了？（例如：它提供了「定義與基本介紹」、提供了「詳細的操作步驟」、提供了「優缺點比較表格」、或提供了「關鍵數據和費用資訊」）。
 
+## 資料處理指令：
+請根據以下步驟分析被引用的網址：
+1. 從【被引用網址列表】中取得以換行符號分隔的網址清單
+2. 在【已抓取網頁內容】中尋找對應的網頁內容
+3. 【已抓取網頁內容】的格式為：每個網址後面會有「--- URL: [網址] ---」標記，接著是該網址的內容
+4. 如果找不到對應的網頁內容，請在 contentSummary 中說明「無法取得網頁內容」
+5. 如果有部分內容但不完整，請基於現有內容進行分析，並在 contentSummary 中說明內容來源的限制
 
-這個網址為什麼被 Google AI 信任？ (E-E-A-T Signal Analysis)
-網址： [被引用網址]
-信任度強項分析： 分析這個網站或網頁展現了哪些強大的「經驗 (Experience)」、「專業 (Expertise)」、「權威 (Authoritativeness)」、「信賴 (Trustworthiness)」信號？
-Experience (經驗): 它有沒有分享親身經歷、真實案例，或是實際操作的圖片/影片？看起來像是真的有做過的人在分享嗎？
-Expertise (專業): 作者是不是這個領域的專家？網站內容是不是很深入、很專精？有沒有引用數據或研究來證明？
-Authoritativeness (權威): 它是不是一個很有名的機構、官方網站，或是在這個行業裡大家公認的領導者？有沒有其他重要、有公信力的網站連結到它？
-Trustworthiness (信賴): 這個網站有沒有清楚的「關於我們」、聯絡方式？內容寫得客不客觀、公不公正？有沒有明確標註資訊來源？網站看起來專業、安全嗎 (網址是 https 開頭)？
+## 分析每個被引用網址：
+對於【被引用網址列表】中的每一個網址，請進行以下分析：
+
+### 內容分析與貢獻度評估：
+- **網址識別**：從網址清單中取得當前分析的網址
+- **內容匹配**：在【已抓取網頁內容】中尋找「--- URL: [該網址] ---」標記
+- **內容摘要**：
+  - 如果找到對應內容：簡要說明網頁的主要內容和重點
+  - 如果內容不完整：基於可用內容進行摘要，並註明限制
+  - 如果完全無內容：明確說明「無法取得網頁內容，無法進行詳細分析」
+- **AI 摘要貢獻分析**：
+  - 對比該網頁內容與【AI Overview 內容】
+  - 識別該網頁對 AI 摘要的具體貢獻（如：提供定義、操作步驟、數據資料、比較分析等）
+  - 如果無法取得內容，請基於網址本身和 AI Overview 內容進行合理推測，並明確標註這是推測
+
+### E-E-A-T 信號分析：
+針對每個網址，分析其展現的信任度信號：
+- **Experience (經驗)**：
+  - 有內容時：分析是否包含親身經歷、真實案例、實際操作證據
+  - 無內容時：基於網址域名和已知信息進行評估
+- **Expertise (專業)**：
+  - 有內容時：評估作者專業度、內容深度、數據引用情況
+  - 無內容時：基於網站性質和域名權威性評估
+- **Authoritativeness (權威)**：
+  - 有內容時：分析機構背景、行業地位、外部認證
+  - 無內容時：基於域名識別（如官方網站、知名機構等）
+- **Trustworthiness (信賴)**：
+  - 有內容時：檢查透明度、客觀性、資訊來源標註
+  - 無內容時：基於網站類型和 HTTPS 等基本信號評估
+
+## 內容驗證與品質控制：
+- 當網頁內容可用時，請進行詳細的內容分析
+- 當網頁內容不可用時，請明確說明限制，並基於可用信息進行合理分析
+- 避免在 contentSummary 中出現「內容未提供」等模糊表述
+- 如果必須進行推測，請明確標註推測性質，如「基於網址性質推測...」
+- 確保每個 citedSourceAnalysis 項目都有完整的四個 E-E-A-T 分析維度
 
 第五部分：你的網址現況評估 (Your Website Assessment)
 你的網址內容重點： 詳細說明【使用者提供網址】目前有哪些內容。
@@ -234,60 +265,115 @@ Trustworthiness (信賴): 這個網站有沒有清楚的「關於我們」、聯
    * 渲染 Prompt 模板（替換變數）
    */
   renderPrompt(category: 'main_analysis', variables: Record<string, any>): string | null {
+    const renderStartTime = Date.now();
+    
     const prompt = this.getCurrentPrompt(category);
     if (!prompt) {
-      logger.error(`Failed to get prompt for category: ${category}`);
+      logger.error(`❌ [PROMPT] Failed to get prompt for category: ${category}`);
       return null;
     }
 
     let rendered = prompt.template;
     
     // 記錄原始模板信息
-    logger.debug('Rendering prompt template:', {
+    logger.info('🔧 [PROMPT] Starting prompt template rendering', {
       templateId: prompt.id,
       templateName: prompt.name,
+      version: prompt.version,
       variablesProvided: Object.keys(variables),
-      templateLength: rendered.length
+      templateLength: rendered.length,
+      expectedVariables: prompt.variables,
+      missingVariables: prompt.variables.filter(v => !(v in variables))
+    });
+    
+    // Log detailed variable content for debugging
+    logger.debug('📊 [PROMPT] Variable contents:', {
+      targetKeyword: variables.targetKeyword,
+      userPageUrl: variables.userPageUrl,
+      aiOverviewContentLength: variables.aiOverviewContent?.length || 0,
+      aiOverviewContentPreview: variables.aiOverviewContent?.substring(0, 100) + '...',
+      citedUrlsCount: variables.citedUrls?.split('\n').filter(Boolean).length || 0,
+      crawledContentLength: variables.crawledContent?.length || 0,
+      crawledContentSample: variables.crawledContent?.substring(0, 200) + '...'
     });
     
     // 替換模板變數
     let replacementCount = 0;
+    const replacementDetails: Record<string, any> = {};
+    
     for (const [key, value] of Object.entries(variables)) {
       const placeholder = `{{${key}}}`;
       const beforeLength = rendered.length;
-      if (rendered.includes(placeholder)) {
-        rendered = rendered.replace(new RegExp(placeholder, 'g'), String(value));
+      const occurrences = (rendered.match(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+      
+      if (occurrences > 0) {
+        const valueStr = String(value);
+        rendered = rendered.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), valueStr);
         const afterLength = rendered.length;
-        const replaced = beforeLength !== afterLength;
-        if (replaced) {
-          replacementCount++;
-          logger.debug(`Successfully replaced {{${key}}} with value of length ${String(value).length}`);
-        }
+        const lengthChange = afterLength - beforeLength;
+        
+        replacementCount++;
+        replacementDetails[key] = {
+          occurrences,
+          valueLength: valueStr.length,
+          lengthChange,
+          valuePreview: valueStr.length > 100 ? valueStr.substring(0, 100) + '...' : valueStr
+        };
+        
+        logger.debug(`✅ [PROMPT] Replaced {{${key}}}`, {
+          occurrences,
+          valueLength: valueStr.length,
+          lengthChange
+        });
       } else {
-        logger.warn(`Template variable {{${key}}} not found in prompt template`);
+        logger.warn(`⚠️ [PROMPT] Template variable {{${key}}} not found in prompt template`);
       }
     }
 
     // 檢查是否還有未替換的變數
     const unreplacedVars = rendered.match(/\{\{[^}]+\}\}/g);
+    const renderDuration = Date.now() - renderStartTime;
+    
     if (unreplacedVars) {
-      logger.error('CRITICAL: Unresolved variables in prompt:', {
+      logger.error('❌ [PROMPT] CRITICAL: Unresolved variables in prompt:', {
         unreplacedVars,
         totalVariablesProvided: Object.keys(variables).length,
         replacementsMade: replacementCount,
         providedVariables: Object.keys(variables),
-        exampleValues: Object.fromEntries(
-          Object.entries(variables).map(([k, v]) => [k, String(v).substring(0, 100) + '...'])
-        )
+        replacementDetails,
+        renderDuration: `${renderDuration}ms`
+      });
+      
+      // Log the section of prompt with unresolved variables for debugging
+      unreplacedVars.forEach(unreplaced => {
+        const index = rendered.indexOf(unreplaced);
+        const contextStart = Math.max(0, index - 50);
+        const contextEnd = Math.min(rendered.length, index + unreplaced.length + 50);
+        logger.error(`🔍 [PROMPT] Context around ${unreplaced}:`, {
+          context: rendered.substring(contextStart, contextEnd),
+          position: index
+        });
       });
     } else {
-      logger.info('All template variables successfully resolved:', {
+      logger.info('✅ [PROMPT] All template variables successfully resolved:', {
         replacementsMade: replacementCount,
-        finalPromptLength: rendered.length
+        finalPromptLength: rendered.length,
+        compressionRatio: (rendered.length / prompt.template.length).toFixed(2),
+        renderDuration: `${renderDuration}ms`,
+        replacementDetails
       });
     }
 
-    logger.debug(`Rendered prompt for ${category}: ${rendered.length} characters`);
+    // Log prompt statistics
+    logger.info(`📊 [PROMPT] Prompt rendering complete`, {
+      category,
+      originalLength: prompt.template.length,
+      finalLength: rendered.length,
+      expansionFactor: (rendered.length / prompt.template.length).toFixed(2),
+      renderDuration: `${renderDuration}ms`,
+      hasUnresolvedVars: !!unreplacedVars
+    });
+    
     return rendered;
   }
 
@@ -308,10 +394,23 @@ Trustworthiness (信賴): 這個網站有沒有清楚的「關於我們」、聯
   } {
     const prompt = this.getCurrentPrompt(category);
     if (!prompt) {
+      logger.error(`❌ [PROMPT] Cannot validate variables - prompt not found for category: ${category}`);
       return { valid: false, missing: ['prompt_not_found'] };
     }
 
     const missing = prompt.variables.filter(varName => !(varName in variables));
+    const provided = Object.keys(variables);
+    const extra = provided.filter(varName => !prompt.variables.includes(varName));
+    
+    logger.info(`🔍 [PROMPT] Variable validation:`, {
+      category,
+      required: prompt.variables,
+      provided,
+      missing,
+      extra,
+      valid: missing.length === 0
+    });
+    
     return {
       valid: missing.length === 0,
       missing

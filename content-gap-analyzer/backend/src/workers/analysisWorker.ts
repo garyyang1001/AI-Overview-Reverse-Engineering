@@ -73,6 +73,8 @@ class AnalysisWorker {
    */
   private async processAnalysisJob(job: Job<AnalysisJobData>): Promise<any> {
     const { jobId, targetKeyword, userPageUrl, competitorUrls } = job.data;
+    const jobStartTime = Date.now();
+    let finalPhaseStartTime = Date.now();
     
     logger.info(`Starting analysis job ${jobId} for keyword: ${targetKeyword}`);
 
@@ -265,6 +267,7 @@ class AnalysisWorker {
       
 
       // 階段 4: 最終差距分析 (80-95%)
+      finalPhaseStartTime = Date.now();
       logger.info(`Job ${jobId}: Performing content gap analysis`);
       processingSteps.aiAnalysisStatus = 'processing';
 
@@ -277,7 +280,7 @@ class AnalysisWorker {
 
         allScrapedPages.forEach(page => {
           if (page.cleanedContent) {
-            crawledContent += `--- START OF CONTENT FOR ${page.url} ---\n${page.cleanedContent}\n--- END OF CONTENT FOR ${page.url} ---\n\n`;
+            crawledContent += `--- URL: ${page.url} ---\n${page.cleanedContent}\n\n`;
           }
         });
 
@@ -360,11 +363,41 @@ class AnalysisWorker {
         ? 'completed successfully'
         : `completed with ${jobCompletion.status === 'completed_with_errors' ? 'errors' : 'issues'}`;
       
-      logger.info(`Job ${jobId}: Analysis ${statusMessage} (quality: ${jobCompletion.qualityScore})`);
+      const totalJobDuration = Date.now() - jobStartTime;
+      const finalPhaseDuration = Date.now() - finalPhaseStartTime;
+      
+      logger.info(`🎉 [WORKER] Job completed`, {
+        jobId,
+        status: jobCompletion.status,
+        statusMessage,
+        qualityScore: jobCompletion.qualityScore,
+        qualityLevel: this.getQualityLevel(jobCompletion.qualityScore),
+        totalDuration: `${totalJobDuration}ms`,
+        finalPhaseDuration: `${finalPhaseDuration}ms`,
+        completedSteps: completedSteps.length,
+        totalSteps: 4,
+        errors: stepErrors.length,
+        warnings: stepWarnings.length,
+        phases: {
+          serpApi: processingSteps.serpApiStatus,
+          userPage: processingSteps.userPageStatus,
+          competitorPages: processingSteps.competitorPagesStatus,
+          aiAnalysis: processingSteps.aiAnalysisStatus
+        }
+      });
+      
       return result;
 
     } catch (error: any) {
-      logger.error(`Job ${jobId}: Analysis failed:`, error);
+      const totalJobDuration = Date.now() - jobStartTime;
+      logger.error(`❌ [WORKER] Job failed`, {
+        jobId,
+        error: error.message,
+        stack: error.stack,
+        totalDuration: `${totalJobDuration}ms`,
+        targetKeyword,
+        userPageUrl
+      });
       throw error;
     }
   }

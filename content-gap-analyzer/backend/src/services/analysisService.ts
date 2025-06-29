@@ -17,6 +17,15 @@ class AnalysisService {
   private analysisResults: Map<string, any> = new Map();
   
   async performAnalysis(analysisId: string, request: AnalysisRequest): Promise<any> {
+    const startTime = Date.now();
+    
+    logger.info(`🚀 [ANALYSIS] Starting analysis for job ${analysisId}`, {
+      targetKeyword: request.targetKeyword,
+      userPageUrl: request.userPageUrl,
+      competitorUrlsCount: request.competitorUrls?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+    
     try {
       // Initialize processing steps
       const processingSteps = {
@@ -76,12 +85,18 @@ class AnalysisService {
       this.updateStatus(analysisId, 'processing', 30);
       
       // Step 2: Scrape user page with Crawl4AI
-      logger.info(`🤖 [CRAWL4AI] Scraping user page: ${request.userPageUrl}`);
+      const crawlStartTime = Date.now();
+      logger.info(`🤖 [CRAWL4AI] Starting user page scraping`, {
+        url: request.userPageUrl,
+        analysisId
+      });
       processingSteps.userPageStatus = 'processing';
 
       let userPageResult: ScrapeResult = await crawl4aiService.scrapePage(request.userPageUrl);
       let userPageFallbackUsed = false; // This will now indicate if Crawl4AI itself failed
 
+      const crawlDuration = Date.now() - crawlStartTime;
+      
       if (userPageResult.success && userPageResult.content) {
         processingSteps.userPageStatus = 'completed';
         logger.info(`✅ [CRAWL4AI] User page scraped successfully:`, {
@@ -90,6 +105,8 @@ class AnalysisService {
           contentPreview: userPageResult.content.substring(0, 150) + '...',
           hasHeadings: userPageResult.headings && userPageResult.headings.length > 0,
           headingsCount: userPageResult.headings?.length || 0,
+          crawlDuration: `${crawlDuration}ms`,
+          contentQuality: this.assessContentQuality(userPageResult.content)
         });
       } else {
         processingSteps.userPageStatus = 'failed';
@@ -98,6 +115,8 @@ class AnalysisService {
           error: userPageResult.errorDetails,
           errorType: userPageResult.error,
           success: userPageResult.success,
+          crawlDuration: `${crawlDuration}ms`,
+          contentLength: userPageResult.content?.length || 0
         });
         logger.warn(`🔄 [GEMINI] FALLBACK: Using URL for Gemini URL Context feature as Crawl4AI failed.`);
         userPageFallbackUsed = true;
@@ -108,6 +127,12 @@ class AnalysisService {
       // Step 3: Extract competitor URLs from search results and batch scrape with Crawl4AI
       const searchReferences = aiOverview.references || [];
       const additionalCompetitorUrls = request.competitorUrls || [];
+
+      logger.info(`📊 [URL_PROCESSING] Preparing competitor URLs`, {
+        searchReferencesCount: searchReferences.length,
+        additionalUrlsCount: additionalCompetitorUrls.length,
+        analysisId
+      });
 
       // Combine search references with user-provided URLs
       const allCompetitorUrls = [
@@ -143,7 +168,13 @@ class AnalysisService {
       }
       
       logger.info(`Found ${searchReferences.length} references from ${dataSource}, ${additionalCompetitorUrls.length} additional URLs`);
-      logger.info(`🤖 [CRAWL4AI] Batch scraping ${uniqueCompetitorUrls.length} competitor pages`);
+      
+      const batchCrawlStartTime = Date.now();
+      logger.info(`🤖 [CRAWL4AI] Starting batch scraping`, {
+        totalUrls: uniqueCompetitorUrls.length,
+        urls: uniqueCompetitorUrls.slice(0, 5), // Log first 5 URLs for debugging
+        analysisId
+      });
       processingSteps.competitorPagesStatus = 'processing';
 
       let competitorResults: ScrapeResult[] = [];
@@ -153,16 +184,37 @@ class AnalysisService {
         
         const successfulScrapes = competitorResults.filter(r => r.success);
         const failedScrapes = competitorResults.filter(r => !r.success);
+        const batchCrawlDuration = Date.now() - batchCrawlStartTime;
+
+        // Log detailed content statistics
+        const contentStats = successfulScrapes.map(scrape => ({
+          url: scrape.url,
+          contentLength: scrape.content?.length || 0,
+          hasTitle: !!scrape.title,
+          hasMetaDescription: !!scrape.metaDescription,
+          headingsCount: scrape.headings?.length || 0
+        }));
 
         if (successfulScrapes.length > 0) {
           processingSteps.competitorPagesStatus = 'completed';
-          logger.info(`Competitor pages scraped: ${successfulScrapes.length} successful out of ${uniqueCompetitorUrls.length} attempted`);
+          logger.info(`✅ [CRAWL4AI] Competitor batch scraping completed`, {
+            successful: successfulScrapes.length,
+            failed: failedScrapes.length,
+            total: uniqueCompetitorUrls.length,
+            duration: `${batchCrawlDuration}ms`,
+            avgDuration: `${Math.round(batchCrawlDuration / uniqueCompetitorUrls.length)}ms`,
+            contentStats: contentStats.slice(0, 5), // Log first 5 for debugging
+            totalContentLength: contentStats.reduce((sum, stat) => sum + stat.contentLength, 0)
+          });
         } else if (failedScrapes.length > 0) {
           processingSteps.competitorPagesStatus = 'partial';
-          logger.warn(`Competitor page scraping partially failed: ${failedScrapes.length} failed.`);
+          logger.warn(`⚠️ [CRAWL4AI] Competitor scraping partially failed`, {
+            failed: failedScrapes.length,
+            failedUrls: failedScrapes.map(f => ({ url: f.url, error: f.error }))
+          });
         } else {
           processingSteps.competitorPagesStatus = 'failed';
-          logger.warn(`All competitor page scraping failed.`);
+          logger.warn(`❌ [CRAWL4AI] All competitor page scraping failed`);
         }
 
       } catch (error: any) {
@@ -186,7 +238,11 @@ class AnalysisService {
       this.updateStatus(analysisId, 'processing', 60);
 
       // Step 4: Final Gap Analysis with available content (now Phase 3 in new workflow)
-      logger.info('Performing content gap analysis with Gemini');
+      const geminiStartTime = Date.now();
+      logger.info(`🧠 [GEMINI] Starting AI analysis phase`, {
+        analysisId,
+        targetKeyword: request.targetKeyword
+      });
       processingSteps.aiAnalysisStatus = 'processing';
 
       let analysisResult: AnalysisReportWithMetadata; // Updated to use standardized interface
@@ -195,15 +251,36 @@ class AnalysisService {
         // Prepare crawled content for the v6.0 prompt format
         let crawledContent = '';
         const allScrapedPages = [userPageResult, ...competitorResults];
+        let contentPrepStats = {
+          totalPages: allScrapedPages.length,
+          successfulPages: 0,
+          totalContentLength: 0,
+          pagesWithContent: [] as Array<{ url: string; contentLength: number; }>
+        };
 
         allScrapedPages.forEach(page => {
           if (page.success && page.content) {
-            crawledContent += `--- START OF CONTENT FOR ${page.url} ---\n${page.content}\n--- END OF CONTENT FOR ${page.url} ---\n\n`;
+            const pageContent = `--- URL: ${page.url} ---\n${page.content}\n\n`;
+            crawledContent += pageContent;
+            contentPrepStats.successfulPages++;
+            contentPrepStats.totalContentLength += page.content.length;
+            contentPrepStats.pagesWithContent.push({
+              url: page.url,
+              contentLength: page.content.length
+            });
           }
         });
 
         // Prepare cited URLs list for the prompt
         const citedUrls = aiOverview.references.join('\n');
+        
+        logger.info(`📝 [CONTENT_PREP] Prepared content for Gemini`, {
+          ...contentPrepStats,
+          citedUrlsCount: aiOverview.references.length,
+          aiOverviewLength: aiOverview.summaryText.length,
+          crawledContentTotalLength: crawledContent.length,
+          analysisId
+        });
         
         logger.info(`🚀 [GEMINI] Using v6.0 ultimate instruction prompt...`);
 
@@ -215,6 +292,16 @@ class AnalysisService {
           citedUrls: citedUrls,
           crawledContent: crawledContent
         };
+        
+        logger.info(`📊 [PROMPT_DATA] Prompt data prepared`, {
+          targetKeyword: promptData.targetKeyword,
+          userPageUrl: promptData.userPageUrl,
+          aiOverviewContentLength: promptData.aiOverviewContent.length,
+          citedUrlsLength: promptData.citedUrls.length,
+          crawledContentLength: promptData.crawledContent.length,
+          aiOverviewPreview: promptData.aiOverviewContent.substring(0, 100) + '...',
+          analysisId
+        });
 
         // Create userPage object from scraped result for compatibility
         const userPage = {
@@ -246,6 +333,7 @@ class AnalysisService {
         };
 
         const baseResult = await geminiService.analyzeContentGap(geminiInput);
+        const geminiDuration = Date.now() - geminiStartTime;
         
         // Add metadata to convert AnalysisReport to AnalysisReportWithMetadata
         analysisResult = {
@@ -258,7 +346,19 @@ class AnalysisService {
           usedFallbackData: false
         };
 
-        logger.info(`✅ [GEMINI] AI analysis completed successfully using v6.0 workflow`);
+        // Log analysis result quality
+        const resultQuality = this.assessAnalysisResultQuality(baseResult);
+        logger.info(`✅ [GEMINI] AI analysis completed successfully`, {
+          duration: `${geminiDuration}ms`,
+          workflow: 'v6.0',
+          resultQuality,
+          hasImmediateActions: baseResult.strategyAndPlan?.p1_immediate?.length > 0,
+          hasMediumTermActions: baseResult.strategyAndPlan?.p2_mediumTerm?.length > 0,
+          hasLongTermActions: baseResult.strategyAndPlan?.p3_longTerm?.length > 0,
+          contentGapsFound: baseResult.websiteAssessment?.contentGaps?.length || 0,
+          citedSourcesAnalyzed: baseResult.citedSourceAnalysis?.length || 0,
+          analysisId
+        });
 
         processingSteps.aiAnalysisStatus = 'completed';
       } catch (error: any) {
@@ -280,12 +380,18 @@ class AnalysisService {
       this.updateStatus(analysisId, 'processing', 90);
 
       // Step 5: Prepare final result with enhanced data (now Phase 4 in new workflow)
-      logger.info('Preparing final AnalysisReport', {
+      const totalDuration = Date.now() - startTime;
+      
+      logger.info(`📋 [FINAL_PREP] Preparing final analysis report`, {
         analysisId,
         hasStrategyAndPlan: !!analysisResult.strategyAndPlan,
         p1ImmediateLength: analysisResult.strategyAndPlan?.p1_immediate?.length || 0,
+        p2MediumTermLength: analysisResult.strategyAndPlan?.p2_mediumTerm?.length || 0,
+        p3LongTermLength: analysisResult.strategyAndPlan?.p3_longTerm?.length || 0,
         hasWebsiteAssessment: !!analysisResult.websiteAssessment,
         contentGapsLength: analysisResult.websiteAssessment?.contentGaps?.length || 0,
+        citedSourcesAnalyzed: analysisResult.citedSourceAnalysis?.length || 0,
+        totalDuration: `${totalDuration}ms`
       });
 
       const finalResult = {
@@ -325,9 +431,27 @@ class AnalysisService {
       this.analysisResults.set(analysisId, finalResult);
       this.updateStatus(analysisId, 'completed', 100);
 
+      logger.info(`🎉 [ANALYSIS] Analysis completed successfully`, {
+        analysisId,
+        totalDuration: `${totalDuration}ms`,
+        qualityScore: finalResult.qualityAssessment!.score,
+        qualityLevel: finalResult.qualityAssessment!.level,
+        completedSteps: finalResult.qualityAssessment!.completedSteps,
+        totalSteps: finalResult.qualityAssessment!.totalSteps,
+        usedFallbackData: finalResult.usedFallbackData
+      });
+
       return finalResult;
     } catch (error: any) {
-      logger.error(`Analysis failed for ${analysisId}`, error);
+      const totalDuration = Date.now() - startTime;
+      logger.error(`❌ [ANALYSIS] Analysis failed`, {
+        analysisId,
+        error: error.message,
+        stack: error.stack,
+        totalDuration: `${totalDuration}ms`,
+        targetKeyword: request.targetKeyword,
+        userPageUrl: request.userPageUrl
+      });
       this.updateStatus(analysisId, 'failed', 0, error.message);
       throw error;
     }
@@ -426,6 +550,81 @@ class AnalysisService {
   }
 
   
+
+  /**
+   * Assess content quality based on length and structure
+   */
+  private assessContentQuality(content: string | null): string {
+    if (!content) return 'empty';
+    const length = content.length;
+    if (length < 100) return 'minimal';
+    if (length < 500) return 'short';
+    if (length < 2000) return 'moderate';
+    if (length < 10000) return 'comprehensive';
+    return 'extensive';
+  }
+
+  /**
+   * Assess the quality of Gemini analysis results
+   */
+  private assessAnalysisResultQuality(result: any): {
+    completeness: number;
+    recommendationQuality: string;
+    contentGapIdentification: string;
+    overallQuality: string;
+  } {
+    let completeness = 0;
+    let recommendationCount = 0;
+    let contentGapCount = 0;
+
+    // Check strategy and plan completeness
+    if (result.strategyAndPlan) {
+      if (result.strategyAndPlan.p1_immediate?.length > 0) {
+        completeness += 30;
+        recommendationCount += result.strategyAndPlan.p1_immediate.length;
+      }
+      if (result.strategyAndPlan.p2_mediumTerm?.length > 0) {
+        completeness += 20;
+        recommendationCount += result.strategyAndPlan.p2_mediumTerm.length;
+      }
+      if (result.strategyAndPlan.p3_longTerm?.length > 0) {
+        completeness += 10;
+        recommendationCount += result.strategyAndPlan.p3_longTerm.length;
+      }
+    }
+
+    // Check other required sections
+    if (result.keywordIntent?.coreIntent) completeness += 10;
+    if (result.aiOverviewAnalysis?.summary) completeness += 10;
+    if (result.citedSourceAnalysis?.length > 0) completeness += 10;
+    if (result.websiteAssessment?.contentGaps?.length > 0) {
+      completeness += 10;
+      contentGapCount = result.websiteAssessment.contentGaps.length;
+    }
+
+    // Determine quality ratings
+    const recommendationQuality = 
+      recommendationCount >= 5 ? 'excellent' :
+      recommendationCount >= 3 ? 'good' :
+      recommendationCount >= 1 ? 'fair' : 'poor';
+
+    const contentGapIdentification = 
+      contentGapCount >= 5 ? 'comprehensive' :
+      contentGapCount >= 3 ? 'adequate' :
+      contentGapCount >= 1 ? 'minimal' : 'none';
+
+    const overallQuality = 
+      completeness >= 90 ? 'excellent' :
+      completeness >= 70 ? 'good' :
+      completeness >= 50 ? 'fair' : 'poor';
+
+    return {
+      completeness,
+      recommendationQuality,
+      contentGapIdentification,
+      overallQuality
+    };
+  }
 
   /**
    * Robust URL comparison that handles common variations

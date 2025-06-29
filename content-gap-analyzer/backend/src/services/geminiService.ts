@@ -154,7 +154,7 @@ class GeminiService {
 
     allScrapedPages.forEach(page => {
       if (page.cleanedContent) {
-        crawledContent += `--- START OF CONTENT FOR ${page.url} ---\n${page.cleanedContent}\n--- END OF CONTENT FOR ${page.url} ---\n\n`;
+        crawledContent += `--- URL: ${page.url} ---\n${page.cleanedContent}\n\n`;
       }
     });
 
@@ -267,6 +267,48 @@ class GeminiService {
       confidence
     };
   }
+  /**
+   * Assess the quality of analysis results
+   * TODO: Implement quality assessment integration
+   */
+  // private assessResultQuality(result: any): {
+  //   hasAllSections: boolean;
+  //   immediateActionsCount: number;
+  //   contentGapsCount: number;
+  //   citedSourcesAnalyzed: number;
+  //   overallCompleteness: string;
+  // } {
+  //   const quality = {
+  //     hasAllSections: false,
+  //     immediateActionsCount: 0,
+  //     contentGapsCount: 0,
+  //     citedSourcesAnalyzed: 0,
+  //     overallCompleteness: 'poor'
+  //   };
+
+  //   // Check if all required sections exist
+  //   quality.hasAllSections = !!(result.strategyAndPlan && 
+  //                              result.keywordIntent && 
+  //                              result.aiOverviewAnalysis && 
+  //                              result.citedSourceAnalysis && 
+  //                              result.websiteAssessment);
+
+  //   // Count content
+  //   quality.immediateActionsCount = result.strategyAndPlan?.p1_immediate?.length || 0;
+  //   quality.contentGapsCount = result.websiteAssessment?.contentGaps?.length || 0;
+  //   quality.citedSourcesAnalyzed = result.citedSourceAnalysis?.length || 0;
+
+  //   // Determine overall completeness
+  //   if (quality.hasAllSections && quality.immediateActionsCount > 0 && quality.contentGapsCount > 0) {
+  //     quality.overallCompleteness = 'excellent';
+  //   } else if (quality.hasAllSections && (quality.immediateActionsCount > 0 || quality.contentGapsCount > 0)) {
+  //     quality.overallCompleteness = 'good';
+  //   } else if (quality.hasAllSections) {
+  //     quality.overallCompleteness = 'fair';
+  //   }
+
+  //   return quality;
+  // }
   
 }
 
