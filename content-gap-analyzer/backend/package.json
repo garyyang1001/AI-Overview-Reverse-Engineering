@@ -26,8 +26,8 @@
     "@types/cheerio": "^0.22.35",
     "axios": "^1.10.0",
     "bullmq": "^5.56.0",
-    "cheerio": "^1.1.0",
     "chalk": "^4.1.2",
+    "cheerio": "^1.1.0",
     "commander": "^11.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -37,6 +37,7 @@
     "ioredis": "^5.6.1",
     "joi": "^17.11.0",
     "openai": "^5.7.0",
+    "puppeteer": "^24.11.1",
     "tiktoken": "^1.0.21",
     "uuid": "^11.1.0",
     "winston": "^3.11.0"

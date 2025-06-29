@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { analysisApi } from '../services/api';
 import { AnalysisRequest, AnalysisReportWithMetadata, JobStatus } from '../types';
@@ -8,7 +8,6 @@ export const useAnalysis = () => {
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisReportWithMetadata | null>(null);
   const [currentRequest, setCurrentRequest] = useState<AnalysisRequest | null>(null);
-  const queryClient = useQueryClient();
 
   // Start analysis mutation
   const startAnalysisMutation = useMutation({
@@ -31,7 +30,14 @@ export const useAnalysis = () => {
     queryKey: ['jobStatus', analysisId],
     queryFn: () => analysisApi.getJobStatus(analysisId!),
     enabled: !!analysisId && !result,
-    refetchInterval: 2000,
+    refetchInterval: (query) => {
+      // Stop polling when analysis is completed
+      const data = query.state.data;
+      if (data?.status === 'completed' || data?.status === 'completed_with_errors' || data?.status === 'failed') {
+        return false;
+      }
+      return 2000;
+    },
     refetchIntervalInBackground: false,
   });
 
@@ -39,20 +45,16 @@ export const useAnalysis = () => {
   useEffect(() => {
     if (status?.status === 'completed' && status.data && analysisId) {
       console.log('✅ Analysis completed successfully:', status);
-      // Stop polling
-      queryClient.invalidateQueries({ queryKey: ['jobStatus', analysisId] });
       
       // Set result directly from status data (backend returns AnalysisReportWithMetadata)
       setResult(status.data as AnalysisReportWithMetadata);
-      setAnalysisId(null);
+      // Keep analysisId for download functionality - don't set to null
       toast.success('分析完成！');
     } else if (status?.status === 'completed_with_errors' && status.data && analysisId) {
       console.warn('⚠️ Analysis completed with errors:', status);
-      // Handle completion with warnings
-      queryClient.invalidateQueries({ queryKey: ['jobStatus', analysisId] });
       
       setResult(status.data as AnalysisReportWithMetadata);
-      setAnalysisId(null);
+      // Keep analysisId for download functionality - don't set to null
       toast.success('分析完成，但有部分警告');
       
       // Log warnings for debugging
@@ -61,8 +63,6 @@ export const useAnalysis = () => {
       }
     } else if (status?.status === 'failed') {
       console.error('❌ Analysis failed:', status);
-      // Stop polling on failure
-      queryClient.invalidateQueries({ queryKey: ['jobStatus', analysisId] });
       setAnalysisId(null);
       
       const errorMessage = status.error?.message || '分析失敗';
@@ -78,7 +78,7 @@ export const useAnalysis = () => {
         completedAt: status.completedAt,
       });
     }
-  }, [status, analysisId, queryClient]);
+  }, [status, analysisId]);
 
   const startAnalysis = useCallback((data: AnalysisRequest) => {
     // Reset previous state

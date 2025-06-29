@@ -4,8 +4,9 @@ import { Toaster } from 'react-hot-toast';
 import AnalysisForm from './components/AnalysisForm';
 import AnalysisResults from './components/AnalysisResults';
 import ErrorBoundary from './components/ErrorBoundary';
+import { DownloadButtons } from './components/DownloadButtons';
 import { useAnalysis } from './hooks/useAnalysis';
-import { Search, BarChart3, Target } from 'lucide-react';
+import { Search, BarChart3, Target, Download } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
@@ -20,7 +21,7 @@ function AppContent() {
       <header className="app-header">
         <div className="header-content">
           <Target className="h-8 w-8 text-blue-600" />
-          <h1>Reverse Engineering AI Overview</h1>
+          <h1>AI摘要逆向工程分析器</h1>
         </div>
       </header>
       
@@ -44,6 +45,37 @@ function AppContent() {
               <div className="feature-item">
                 <Target className="h-5 w-5" />
                 <span>SEO 優化建議</span>
+              </div>
+            </div>
+            
+            {/* Download Section */}
+            {(result && analysisId) && (
+              <div className="sidebar-download-section">
+                <div className="feature-item">
+                  <Download className="h-5 w-5" />
+                  <span>下載報告</span>
+                </div>
+                <div className="download-buttons-container">
+                  <DownloadButtons jobId={analysisId} className="sidebar-download-buttons" />
+                </div>
+              </div>
+            )}
+            
+            {/* Company Information Section */}
+            <div className="sidebar-footer">
+              <p className="footer-description">
+                本工具主要是為了減輕SEO在資料研究上的負擔而設計
+              </p>
+              <p className="footer-description">
+                若在執行上需要更深度的分析、顧問諮詢<br />
+                歡迎透過以下方式與我們聯絡，我們一起讓好事發生
+              </p>
+              <div className="company-info">
+                <h4 className="company-name">好事發生數位有限公司</h4>
+                <div className="contact-info">
+                  <p>Email: gary@ohya.co</p>
+                  <p>Threads: <a href="https://www.threads.com/@ohya.studio" target="_blank" rel="noopener noreferrer">@ohya.studio</a></p>
+                </div>
               </div>
             </div>
           </div>

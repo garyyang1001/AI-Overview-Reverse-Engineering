@@ -13,7 +13,7 @@ interface AnalysisResultsProps {
   targetKeyword?: string;
 }
 
-const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targetKeyword }) => {
+const AnalysisResults: React.FC<AnalysisResultsProps> = ({ analysisId, status, result, targetKeyword }) => {
   if (status && !['completed', 'completed_with_errors'].includes(status.status)) {
     return (
       <div className="text-center py-12">
@@ -343,6 +343,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ status, result, targe
           <p className="text-small text-tertiary">{result.reportFooter}</p>
         </div>
       )}
+
     </div>
   );
 };

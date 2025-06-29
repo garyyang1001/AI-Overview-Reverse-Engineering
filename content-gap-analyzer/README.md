@@ -9,6 +9,7 @@
 - 💡 **可操作建議**：提供具體的內容改進建議
 - 🎯 **E-E-A-T 優化**：根據 Google 的品質指南優化內容
 - ⚡ **智能快取**：避免重複分析，節省 API 成本
+- 📥 **報告匯出**：支援 PDF 和 HTML 格式下載分析報告
 
 ## 技術架構
 
@@ -18,6 +19,7 @@
 - SerpAPI
 - Redis 快取
 - Cheerio 網頁爬蟲
+- Puppeteer (PDF 生成)
 
 ### 前端
 - React + TypeScript
@@ -86,12 +88,14 @@ npm start
 3. （可選）添加競爭對手的 URL
 4. 點擊「開始分析」
 5. 等待分析完成，查看詳細報告
+6. 完成後可下載 PDF 或 HTML 格式報告
 
 ## API 端點
 
-- `POST /api/analysis/start` - 開始新的分析
-- `GET /api/analysis/status/:id` - 獲取分析狀態
-- `GET /api/analysis/result/:id` - 獲取分析結果
+- `POST /api/analyze` - 開始新的分析
+- `GET /api/results/:jobId` - 獲取分析狀態和結果
+- `GET /api/export/pdf/:jobId` - 下載 PDF 格式報告
+- `GET /api/export/html/:jobId` - 下載 HTML 格式報告
 - `GET /api/health` - 健康檢查
 
 ## 配置說明

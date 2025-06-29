@@ -92,6 +92,10 @@ app.get('/', (_req, res) => {
       health: '/api/health',
       analyze: 'POST /api/analyze',
       results: 'GET /api/results/:jobId',
+      export: {
+        pdf: 'GET /api/export/pdf/:jobId',
+        html: 'GET /api/export/html/:jobId'
+      },
       prompts: '/api/prompts',
       costs: '/api/costs/daily',
       tests: process.env.NODE_ENV === 'development' ? {

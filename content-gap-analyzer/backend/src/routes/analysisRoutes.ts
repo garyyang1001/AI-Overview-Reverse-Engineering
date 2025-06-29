@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { analysisController } from '../controllers/analysisController';
+import { exportController } from '../controllers/exportController';
 import { validateAnalysisRequest } from '../middleware/validation';
 import { analysisRateLimiter, adminRateLimiter } from '../middleware/rateLimiter';
 import { methodValidator, apiKeyAuth } from '../middleware/security';
@@ -56,6 +57,19 @@ router.delete('/cache',
   methodValidator(['DELETE']),
   apiKeyAuth,
   analysisController.clearCache
+);
+
+// Export endpoints (v6.0 新增)
+// GET /api/export/pdf/{jobId} - 匯出 PDF 報告
+router.get('/export/pdf/:jobId',
+  methodValidator(['GET']),
+  exportController.exportPDF
+);
+
+// GET /api/export/html/{jobId} - 匯出 HTML 報告
+router.get('/export/html/:jobId',
+  methodValidator(['GET']),
+  exportController.exportHTML
 );
 
 // 向後兼容的舊端點（帶有安全限制）
