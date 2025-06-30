@@ -242,6 +242,8 @@ export class ExportService {
     <div class="metadata">
       <p><strong>分析 ID：</strong> ${escapeHtml(report.analysisId)}</p>
       <p><strong>生成時間：</strong> ${formatDate(report.timestamp)}</p>
+      ${report.targetKeyword ? `<p><strong>目標關鍵字：</strong> ${escapeHtml(report.targetKeyword)}</p>` : ''}
+      ${report.userPageUrl ? `<p><strong>目標網址：</strong> <a href="${escapeHtml(report.userPageUrl)}" target="_blank">${escapeHtml(report.userPageUrl)}</a></p>` : ''}
       <p><strong>分析品質：</strong> 
         <span class="quality-badge quality-${report.qualityAssessment?.level || 'medium'}">
           ${report.qualityAssessment?.score || 0}分 - ${report.qualityAssessment?.level?.toUpperCase() || 'N/A'}

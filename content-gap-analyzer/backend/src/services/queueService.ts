@@ -159,6 +159,16 @@ class QueueService {
           status.status = 'completed_with_errors';
           status.warnings = result.warnings;
         }
+        
+        // Log result structure for debugging
+        logger.debug(`Job ${jobId} completed with result:`, {
+          hasResult: !!result,
+          resultKeys: Object.keys(result),
+          hasAnalysisId: !!result.analysisId,
+          hasStrategyAndPlan: !!result.strategyAndPlan,
+          hasKeywordIntent: !!result.keywordIntent,
+          resultSize: JSON.stringify(result).length
+        });
       }
 
       return status;

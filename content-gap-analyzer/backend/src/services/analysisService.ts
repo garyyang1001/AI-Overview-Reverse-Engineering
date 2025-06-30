@@ -398,6 +398,8 @@ class AnalysisService {
         ...analysisResult, // Directly use the analysisResult as it's already AnalysisReport
         analysisId,
         timestamp: new Date().toISOString(),
+        targetKeyword: request.targetKeyword,
+        userPageUrl: request.userPageUrl,
         aiOverviewData: {
           ...aiOverview,
           dataSource: aiOverview.fallbackUsed ? `${aiOverview.source} (fallback)` : 'AI Overview'

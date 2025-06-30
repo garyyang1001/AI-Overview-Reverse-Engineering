@@ -43,8 +43,28 @@ export const useAnalysis = () => {
 
   // Handle job completion
   useEffect(() => {
+    // Log status for debugging
+    if (status && analysisId) {
+      console.log(`📊 Job ${analysisId} status update:`, {
+        status: status.status,
+        hasData: !!status.data,
+        dataKeys: status.data ? Object.keys(status.data) : [],
+        progress: status.progress,
+        warnings: status.warnings?.length || 0,
+        error: status.error
+      });
+    }
+    
     if (status?.status === 'completed' && status.data && analysisId) {
       console.log('✅ Analysis completed successfully:', status);
+      console.log('📋 Result data structure:', {
+        hasStrategyAndPlan: !!status.data.strategyAndPlan,
+        hasKeywordIntent: !!status.data.keywordIntent,
+        hasAiOverviewAnalysis: !!status.data.aiOverviewAnalysis,
+        hasCitedSourceAnalysis: !!status.data.citedSourceAnalysis,
+        hasWebsiteAssessment: !!status.data.websiteAssessment,
+        dataSize: JSON.stringify(status.data).length
+      });
       
       // Set result directly from status data (backend returns AnalysisReportWithMetadata)
       setResult(status.data as AnalysisReportWithMetadata);
@@ -52,6 +72,14 @@ export const useAnalysis = () => {
       toast.success('分析完成！');
     } else if (status?.status === 'completed_with_errors' && status.data && analysisId) {
       console.warn('⚠️ Analysis completed with errors:', status);
+      console.log('📋 Result data structure (with errors):', {
+        hasStrategyAndPlan: !!status.data.strategyAndPlan,
+        hasKeywordIntent: !!status.data.keywordIntent,
+        hasAiOverviewAnalysis: !!status.data.aiOverviewAnalysis,
+        hasCitedSourceAnalysis: !!status.data.citedSourceAnalysis,
+        hasWebsiteAssessment: !!status.data.websiteAssessment,
+        dataSize: JSON.stringify(status.data).length
+      });
       
       setResult(status.data as AnalysisReportWithMetadata);
       // Keep analysisId for download functionality - don't set to null

@@ -103,6 +103,8 @@ export interface AnalysisReportWithMetadata extends AnalysisReport {
   // Additional data
   analysisId: string;
   timestamp: string;
+  targetKeyword?: string;
+  userPageUrl?: string;
   aiOverviewData?: AIOverviewData;
   competitorUrls?: string[];
 
